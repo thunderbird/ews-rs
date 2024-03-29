@@ -9,4 +9,4 @@ edition = "2021"
 quick-xml = { version = "0.31.0", features = ["serde", "serialize"] }
 serde = { version = "1.0.196", features = ["derive"] }
 thiserror = "1.0.57"
-xml_struct = { version = "0.1.0", path = "../xml_struct/xml_struct" }
+xml_struct = { git = "https://github.com/thunderbird/xml_struct.git", rev = "ace285b5848750064d4f5ad30ddc0c0bff53d8a9", version = "0.1.0" }
