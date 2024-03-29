@@ -59,23 +59,33 @@ pub enum BaseFolderId {
     /// An identifier for an arbitrary folder.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderid>.
-    FolderId(FolderId),
+    FolderId {
+        #[xml_struct(attribute)]
+        id: String,
+
+        #[xml_struct(attribute)]
+        change_key: Option<String>,
+    },
 
     /// An identifier for referencing a folder by name, e.g. "inbox" or
     /// "junkemail".
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/distinguishedfolderid>.
-    DistinguishedFolderId(FolderId),
+    DistinguishedFolderId {
+        #[xml_struct(attribute)]
+        id: String,
+
+        #[xml_struct(attribute)]
+        change_key: Option<String>,
+    },
 }
 
-#[derive(Debug, Deserialize, PartialEq, XmlSerialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct FolderId {
     #[serde(rename = "@Id")]
-    #[xml_struct(attribute)]
     pub id: String,
 
     #[serde(rename = "@ChangeKey")]
-    #[xml_struct(attribute)]
     pub change_key: Option<String>,
 }
 

@@ -1,10 +1,9 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::{BaseFolderId, Folder, FolderId, FolderShape, ResponseClass, MESSAGES_NS_URI};
+use crate::{BaseFolderId, Folder, FolderId, FolderShape, ResponseClass};
 
 #[derive(Debug, XmlSerialize)]
-#[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct SyncFolderHierarchy {
     pub folder_shape: FolderShape,
     pub sync_folder_id: Option<BaseFolderId>,

@@ -1,10 +1,9 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::{BaseFolderId, Folder, FolderShape, ResponseClass, MESSAGES_NS_URI};
+use crate::{BaseFolderId, Folder, FolderShape, ResponseClass};
 
 #[derive(Debug, XmlSerialize)]
-#[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct GetFolder {
     pub folder_shape: FolderShape,
     pub folder_ids: Vec<BaseFolderId>,
@@ -27,5 +26,11 @@ pub struct ResponseMessages {
 pub struct GetFolderResponseMessage {
     #[serde(rename = "@ResponseClass")]
     pub response_class: ResponseClass,
-    pub folders: Vec<Folder>,
+    pub folders: Folders,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Folders {
+    #[serde(rename = "$value")]
+    pub inner: Vec<Folder>,
 }

@@ -46,14 +46,21 @@ where
 {
     pub fn from_xml_document(document: &str) -> Result<Self, Error> {
         #[derive(Deserialize)]
+        #[serde(rename_all = "PascalCase")]
         struct DummyEnvelope<T> {
-            body: T,
+            body: DummyBody<T>,
+        }
+
+        #[derive(Deserialize)]
+        struct DummyBody<T> {
+            #[serde(rename = "$value")]
+            inner: T,
         }
 
         let envelope: DummyEnvelope<B> = quick_xml::de::from_str(document)?;
 
         Ok(Envelope {
-            body: envelope.body,
+            body: envelope.body.inner,
         })
     }
 }
