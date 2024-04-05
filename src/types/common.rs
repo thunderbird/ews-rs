@@ -39,12 +39,7 @@ pub enum BaseShape {
     AllProperties,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct ResponseMessages<T> {
-    #[serde(rename = "$value")]
-    pub value: Vec<T>,
-}
-
+/// Attribute to a response message describing a response status.
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum ResponseClass {
     Success,
@@ -80,6 +75,9 @@ pub enum BaseFolderId {
     },
 }
 
+/// The unique identifier of a folder.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderid>
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct FolderId {
     #[serde(rename = "@Id")]
@@ -89,8 +87,12 @@ pub struct FolderId {
     pub change_key: Option<String>,
 }
 
+/// The representation of a folder in an EWS operation.
 #[derive(Debug, Deserialize, PartialEq)]
 pub enum Folder {
+    /// A calendar folder in a mailbox.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/calendarfolder>
     #[serde(rename_all = "PascalCase")]
     CalendarFolder {
         folder_id: FolderId,
@@ -100,6 +102,10 @@ pub enum Folder {
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
     },
+
+    /// A contacts folder in a mailbox.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contactsfolder>
     #[serde(rename_all = "PascalCase")]
     ContactsFolder {
         folder_id: FolderId,
@@ -109,6 +115,10 @@ pub enum Folder {
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
     },
+
+    /// A folder in a mailbox.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folder>
     #[serde(rename_all = "PascalCase")]
     Folder {
         folder_id: FolderId,
@@ -119,6 +129,10 @@ pub enum Folder {
         child_folder_count: Option<u32>,
         unread_count: Option<u32>,
     },
+
+    /// A search folder in a mailbox.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/searchfolder>
     #[serde(rename_all = "PascalCase")]
     SearchFolder {
         folder_id: FolderId,
@@ -128,6 +142,10 @@ pub enum Folder {
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
     },
+
+    /// A task folder in a mailbox.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/tasksfolder>
     #[serde(rename_all = "PascalCase")]
     TasksFolder {
         folder_id: FolderId,

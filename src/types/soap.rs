@@ -7,6 +7,7 @@ use xml_struct::XmlSerialize;
 
 use crate::{Error, SOAP_NS_URI, TYPES_NS_URI};
 
+/// A SOAP envelope wrapping an EWS operation.
 #[derive(Debug)]
 pub struct Envelope<B> {
     pub body: B,
@@ -45,6 +46,7 @@ impl<B> Envelope<B>
 where
     B: for<'de> Deserialize<'de>,
 {
+    /// Populates an [`Envelope`] from raw XML.
     pub fn from_xml_document(document: &str) -> Result<Self, Error> {
         #[derive(Deserialize)]
         #[serde(rename_all = "PascalCase")]
