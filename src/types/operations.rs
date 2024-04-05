@@ -6,14 +6,14 @@ use crate::{
     sync_folder_hierarchy::{SyncFolderHierarchy, SyncFolderHierarchyResponse}, MESSAGES_NS_URI,
 };
 
-#[derive(XmlSerialize)]
+#[derive(Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub enum Operation {
     GetFolder(GetFolder),
     SyncFolderHierarchy(SyncFolderHierarchy),
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub enum OperationResponse {
     GetFolderResponse(GetFolderResponse),
     SyncFolderHierarchyResponse(SyncFolderHierarchyResponse),

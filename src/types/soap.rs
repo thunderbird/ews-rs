@@ -7,6 +7,7 @@ use xml_struct::XmlSerialize;
 
 use crate::{Error, SOAP_NS_URI, TYPES_NS_URI};
 
+#[derive(Debug)]
 pub struct Envelope<B> {
     pub body: B,
 }
