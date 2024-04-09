@@ -7,7 +7,8 @@ use xml_struct::XmlSerialize;
 
 use crate::{
     get_folder::{GetFolder, GetFolderResponse},
-    sync_folder_hierarchy::{SyncFolderHierarchy, SyncFolderHierarchyResponse}, MESSAGES_NS_URI,
+    sync_folder_hierarchy::{SyncFolderHierarchy, SyncFolderHierarchyResponse},
+    MESSAGES_NS_URI,
 };
 
 /// Available EWS operations (requests) that can be performed against an
