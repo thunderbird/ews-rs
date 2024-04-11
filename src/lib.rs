@@ -16,6 +16,12 @@ pub enum Error {
     #[error("failed to deserialize structure from XML")]
     Deserialize(#[from] quick_xml::DeError),
 
-    #[error("error manipulating XML data")]
-    Xml(#[from] quick_xml::Error),
+    #[error("invalid XML document")]
+    InvalidXml(#[from] quick_xml::Error),
+
+    #[error("unexpected response body")]
+    UnexpectedResponse(Vec<u8>),
+
+    #[error("a fault occurred in the request")]
+    RequestFault(Box<soap::Fault>),
 }

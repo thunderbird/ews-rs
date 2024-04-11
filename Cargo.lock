@@ -6,11 +6,18 @@ version = 3
 name = "ews"
 version = "0.1.0"
 dependencies = [
+ "log",
  "quick-xml",
  "serde",
  "thiserror",
  "xml_struct",
 ]
+
+[[package]]
+name = "log"
+version = "0.4.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
 name = "memchr"
