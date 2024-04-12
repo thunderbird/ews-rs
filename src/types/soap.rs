@@ -462,7 +462,7 @@ mod tests {
     }
 
     #[test]
-    fn deserialie_envelope_with_server_busy_fault() {
+    fn deserialize_envelope_with_server_busy_fault() {
         // This XML is contrived based on what's known of the shape of
         // `ErrorServerBusy` responses. It should be replaced when we have
         // real-life examples.
