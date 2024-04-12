@@ -22,6 +22,8 @@ pub enum Error {
     #[error("unexpected response body")]
     UnexpectedResponse(Vec<u8>),
 
+    // The `Fault` is boxed so as to keep the in-memory size of the enum itself
+    // relatively low.
     #[error("a fault occurred in the request")]
     RequestFault(Box<soap::Fault>),
 }
