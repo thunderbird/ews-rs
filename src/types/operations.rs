@@ -5,12 +5,14 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-pub trait Operation: XmlSerialize {
+pub trait Operation: XmlSerialize + sealed::NamedStructure {
     type Response: OperationResponse;
-
-    fn name() -> &'static str;
 }
 
-pub trait OperationResponse: for<'de> Deserialize<'de> {
-    fn name() -> &'static str;
+pub trait OperationResponse: for<'de> Deserialize<'de> + sealed::NamedStructure {}
+
+pub(super) mod sealed {
+    pub trait NamedStructure {
+        fn name() -> &'static str;
+    }
 }

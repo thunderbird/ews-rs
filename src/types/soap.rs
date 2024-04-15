@@ -453,7 +453,7 @@ pub struct FaultDetail {
 mod tests {
     use serde::Deserialize;
 
-    use crate::{Error, OperationResponse};
+    use crate::{types::sealed::NamedStructure, Error, OperationResponse};
 
     use super::Envelope;
 
@@ -467,7 +467,9 @@ mod tests {
             _other_field: (),
         }
 
-        impl OperationResponse for SomeStruct {
+        impl OperationResponse for SomeStruct {}
+
+        impl NamedStructure for SomeStruct {
             fn name() -> &'static str {
                 "Foo"
             }
@@ -492,7 +494,9 @@ mod tests {
         #[derive(Debug, Deserialize)]
         struct Foo;
 
-        impl OperationResponse for Foo {
+        impl OperationResponse for Foo {}
+
+        impl NamedStructure for Foo {
             fn name() -> &'static str {
                 "Foo"
             }
@@ -543,7 +547,9 @@ mod tests {
         #[derive(Debug, Deserialize)]
         struct Foo;
 
-        impl OperationResponse for Foo {
+        impl OperationResponse for Foo {}
+
+        impl NamedStructure for Foo {
             fn name() -> &'static str {
                 "Foo"
             }

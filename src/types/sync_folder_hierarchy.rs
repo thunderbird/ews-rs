@@ -6,8 +6,8 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    BaseFolderId, Folder, FolderId, FolderShape, Operation, OperationResponse, ResponseClass,
-    MESSAGES_NS_URI,
+    types::sealed::NamedStructure, BaseFolderId, Folder, FolderId, FolderShape, Operation,
+    OperationResponse, ResponseClass, MESSAGES_NS_URI,
 };
 
 /// The request for update regarding the folder hierarchy in a mailbox.
@@ -23,7 +23,9 @@ pub struct SyncFolderHierarchy {
 
 impl Operation for SyncFolderHierarchy {
     type Response = SyncFolderHierarchyResponse;
+}
 
+impl NamedStructure for SyncFolderHierarchy {
     fn name() -> &'static str {
         "SyncFolderHierarchy"
     }
@@ -38,7 +40,9 @@ pub struct SyncFolderHierarchyResponse {
     pub response_messages: ResponseMessages,
 }
 
-impl OperationResponse for SyncFolderHierarchyResponse {
+impl OperationResponse for SyncFolderHierarchyResponse {}
+
+impl NamedStructure for SyncFolderHierarchyResponse {
     fn name() -> &'static str {
         "SyncFolderHierarchyResponse"
     }
