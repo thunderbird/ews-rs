@@ -2,14 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::marker::PhantomData;
+
 use quick_xml::{
     events::{BytesDecl, BytesEnd, BytesStart, Event},
     Reader, Writer,
 };
-use serde::Deserialize;
-use xml_struct::XmlSerialize;
+use serde::{de::Visitor, Deserialize, Deserializer};
 
-use crate::{Error, MessageXml, ResponseCode, SOAP_NS_URI, TYPES_NS_URI};
+use crate::{
+    Error, MessageXml, Operation, OperationResponse, ResponseCode, SOAP_NS_URI, TYPES_NS_URI,
+};
 
 /// A SOAP envelope wrapping an EWS operation.
 ///
@@ -21,10 +24,13 @@ pub struct Envelope<B> {
 
 impl<B> Envelope<B>
 where
-    B: XmlSerialize,
+    B: Operation,
 {
     /// Serializes the SOAP envelope as a complete XML document.
     pub fn as_xml_document(&self) -> Result<Vec<u8>, Error> {
+        const SOAP_ENVELOPE: &str = "soap:Envelope";
+        const SOAP_BODY: &str = "soap:Body";
+
         let mut writer = {
             let inner: Vec<u8> = Default::default();
             Writer::new(inner)
@@ -33,16 +39,19 @@ where
         // All EWS examples use XML 1.0 with UTF-8, so stick to that for now.
         writer.write_event(Event::Decl(BytesDecl::new("1.0", Some("utf-8"), None)))?;
 
-        // To get around having to make `Envelope` itself implement
-        // `XmlSerialize`
+        // We manually write these elements in order to control the name we
+        // write the body with.
         writer.write_event(Event::Start(
-            BytesStart::new("soap:Envelope")
+            BytesStart::new(SOAP_ENVELOPE)
                 .with_attributes([("xmlns:soap", SOAP_NS_URI), ("xmlns:t", TYPES_NS_URI)]),
         ))?;
+        writer.write_event(Event::Start(BytesStart::new(SOAP_BODY)))?;
 
-        self.body.serialize_as_element(&mut writer, "soap:Body")?;
+        // Write the operation itself.
+        self.body.serialize_as_element(&mut writer, B::name())?;
 
-        writer.write_event(Event::End(BytesEnd::new("soap:Envelope")))?;
+        writer.write_event(Event::End(BytesEnd::new(SOAP_BODY)))?;
+        writer.write_event(Event::End(BytesEnd::new(SOAP_ENVELOPE)))?;
 
         Ok(writer.into_inner())
     }
@@ -50,20 +59,73 @@ where
 
 impl<B> Envelope<B>
 where
-    B: for<'de> Deserialize<'de>,
+    B: OperationResponse,
 {
     /// Populates an [`Envelope`] from raw XML.
     pub fn from_xml_document(document: &[u8]) -> Result<Self, Error> {
-        #[derive(Deserialize)]
-        #[serde(rename_all = "PascalCase")]
-        struct DummyEnvelope<T> {
-            body: DummyBody<T>,
+        struct BodyVisitor<T>(PhantomData<T>);
+
+        impl<'de, T> Visitor<'de> for BodyVisitor<T>
+        where
+            T: OperationResponse,
+        {
+            type Value = T;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("EWS operation response body")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let name: Option<String> = map.next_key()?;
+                if let Some(name) = name {
+                    let expected = T::name();
+                    if name.as_str() != expected {
+                        return Err(serde::de::Error::custom(format_args!(
+                            "unknown field `{}`, expected {}",
+                            name, expected
+                        )));
+                    }
+
+                    let value = map.next_value()?;
+
+                    // To satisfy quick-xml's serde impl, we need to consume the
+                    // final `None` key value in order to successfully complete.
+                    if let Some(name) = map.next_key::<String>()? {
+                        return Err(serde::de::Error::custom(format_args!(
+                            "unexpected field `{}`",
+                            name
+                        )));
+                    }
+
+                    return Ok(value);
+                }
+
+                Err(serde::de::Error::invalid_type(
+                    serde::de::Unexpected::Map,
+                    &self,
+                ))
+            }
+        }
+
+        fn deserialize_body<'de, D, T>(body: D) -> Result<T, D::Error>
+        where
+            D: Deserializer<'de>,
+            T: OperationResponse,
+        {
+            body.deserialize_map(BodyVisitor::<T>(PhantomData))
         }
 
         #[derive(Deserialize)]
-        struct DummyBody<T> {
-            #[serde(rename = "$value")]
-            inner: T,
+        #[serde(rename_all = "PascalCase")]
+        struct DummyEnvelope<T>
+        where
+            T: OperationResponse,
+        {
+            #[serde(deserialize_with = "deserialize_body")]
+            body: T,
         }
 
         // The body of an envelope can contain a fault, indicating an error with
@@ -83,7 +145,7 @@ where
         let envelope: DummyEnvelope<B> = quick_xml::de::from_reader(document)?;
 
         Ok(Envelope {
-            body: envelope.body.inner,
+            body: envelope.body,
         })
     }
 }
@@ -391,7 +453,7 @@ pub struct FaultDetail {
 mod tests {
     use serde::Deserialize;
 
-    use crate::Error;
+    use crate::{Error, OperationResponse};
 
     use super::Envelope;
 
@@ -403,6 +465,12 @@ mod tests {
 
             #[serde(rename = "other_field")]
             _other_field: (),
+        }
+
+        impl OperationResponse for SomeStruct {
+            fn name() -> &'static str {
+                "Foo"
+            }
         }
 
         // This XML is contrived, with a custom structure defined in order to
@@ -421,10 +489,19 @@ mod tests {
 
     #[test]
     fn deserialize_envelope_with_schema_fault() {
+        #[derive(Debug, Deserialize)]
+        struct Foo;
+
+        impl OperationResponse for Foo {
+            fn name() -> &'static str {
+                "Foo"
+            }
+        }
+
         // This XML is drawn from testing data for `evolution-ews`.
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultcode xmlns:a="http://schemas.microsoft.com/exchange/services/2006/types">a:ErrorSchemaValidation</faultcode><faultstring xml:lang="en-US">The request failed schema validation: The 'Id' attribute is invalid - The value 'invalidparentid' is invalid according to its datatype 'http://schemas.microsoft.com/exchange/services/2006/types:DistinguishedFolderIdNameType' - The Enumeration constraint failed.</faultstring><detail><e:ResponseCode xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">ErrorSchemaValidation</e:ResponseCode><e:Message xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">The request failed schema validation.</e:Message><t:MessageXml xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"><t:LineNumber>2</t:LineNumber><t:LinePosition>630</t:LinePosition><t:Violation>The 'Id' attribute is invalid - The value 'invalidparentid' is invalid according to its datatype 'http://schemas.microsoft.com/exchange/services/2006/types:DistinguishedFolderIdNameType' - The Enumeration constraint failed.</t:Violation></t:MessageXml></detail></s:Fault></s:Body></s:Envelope>"#;
 
-        let err = <Envelope<()>>::from_xml_document(xml.as_bytes())
+        let err = <Envelope<Foo>>::from_xml_document(xml.as_bytes())
             .expect_err("should return error when body contains fault");
 
         if let Error::RequestFault(fault) = err {
@@ -463,12 +540,21 @@ mod tests {
 
     #[test]
     fn deserialize_envelope_with_server_busy_fault() {
+        #[derive(Debug, Deserialize)]
+        struct Foo;
+
+        impl OperationResponse for Foo {
+            fn name() -> &'static str {
+                "Foo"
+            }
+        }
+
         // This XML is contrived based on what's known of the shape of
         // `ErrorServerBusy` responses. It should be replaced when we have
         // real-life examples.
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultcode xmlns:a="http://schemas.microsoft.com/exchange/services/2006/types">a:ErrorServerBusy</faultcode><faultstring xml:lang="en-US">I made this up because I don't have real testing data. 🙃</faultstring><detail><e:ResponseCode xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">ErrorServerBusy</e:ResponseCode><e:Message xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">Who really knows?</e:Message><t:MessageXml xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"><t:Value Name="BackOffMilliseconds">25</t:Value></t:MessageXml></detail></s:Fault></s:Body></s:Envelope>"#;
 
-        let err = <Envelope<()>>::from_xml_document(xml.as_bytes())
+        let err = <Envelope<Foo>>::from_xml_document(xml.as_bytes())
             .expect_err("should return error when body contains fault");
 
         // The testing here isn't as thorough as the invalid schema test due to

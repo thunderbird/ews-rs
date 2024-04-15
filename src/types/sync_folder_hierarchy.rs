@@ -5,16 +5,28 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::{BaseFolderId, Folder, FolderId, FolderShape, ResponseClass};
+use crate::{
+    BaseFolderId, Folder, FolderId, FolderShape, Operation, OperationResponse, ResponseClass,
+    MESSAGES_NS_URI,
+};
 
 /// The request for update regarding the folder hierarchy in a mailbox.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/syncfolderhierarchy>
 #[derive(Debug, XmlSerialize)]
+#[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct SyncFolderHierarchy {
     pub folder_shape: FolderShape,
     pub sync_folder_id: Option<BaseFolderId>,
     pub sync_state: Option<String>,
+}
+
+impl Operation for SyncFolderHierarchy {
+    type Response = SyncFolderHierarchyResponse;
+
+    fn name() -> &'static str {
+        "SyncFolderHierarchy"
+    }
 }
 
 /// The response to a SyncFolderHierarchy request.
@@ -24,6 +36,12 @@ pub struct SyncFolderHierarchy {
 #[serde(rename_all = "PascalCase")]
 pub struct SyncFolderHierarchyResponse {
     pub response_messages: ResponseMessages,
+}
+
+impl OperationResponse for SyncFolderHierarchyResponse {
+    fn name() -> &'static str {
+        "SyncFolderHierarchyResponse"
+    }
 }
 
 /// A collection of response messages from a SyncFolderHierarchy response.
