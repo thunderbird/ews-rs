@@ -130,6 +130,6 @@ pub enum Change {
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/delete-foldersync>
     Delete(
         /// The EWS ID for the deleted folder.
-        FolderId
+        FolderId,
     ),
 }
