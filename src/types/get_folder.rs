@@ -16,7 +16,11 @@ use crate::{
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct GetFolder {
+    /// A description of the information to be included in the response for each
+    /// retrieved folder.
     pub folder_shape: FolderShape,
+
+    /// A list of IDs for which to retrieve folder information.
     pub folder_ids: Vec<BaseFolderId>,
 }
 
@@ -62,8 +66,11 @@ pub struct ResponseMessages {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct GetFolderResponseMessage {
+    /// The success value of the corresponding request.
     #[serde(rename = "@ResponseClass")]
     pub response_class: ResponseClass,
+
+    /// A collection of the retrieved folders.
     pub folders: Folders,
 }
 

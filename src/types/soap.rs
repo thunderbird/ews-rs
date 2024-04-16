@@ -14,7 +14,7 @@ use crate::{
 mod de;
 use self::de::DummyEnvelope;
 
-/// A SOAP envelope wrapping an EWS operation.
+/// A SOAP envelope containing the body of an EWS operation or response.
 ///
 /// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383494>
 #[derive(Debug)]
