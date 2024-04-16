@@ -6,8 +6,8 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, BaseFolderId, Folder, FolderShape, Operation, OperationResponse,
-    ResponseClass, MESSAGES_NS_URI,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, Folder, FolderShape, Operation,
+    OperationResponse, ResponseClass, MESSAGES_NS_URI,
 };
 
 /// A request to get information on one or more folders.
