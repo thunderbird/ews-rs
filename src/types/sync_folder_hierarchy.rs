@@ -6,7 +6,7 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::NamedStructure, BaseFolderId, Folder, FolderId, FolderShape, Operation,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, Folder, FolderId, FolderShape, Operation,
     OperationResponse, ResponseClass, MESSAGES_NS_URI,
 };
 
@@ -25,7 +25,7 @@ impl Operation for SyncFolderHierarchy {
     type Response = SyncFolderHierarchyResponse;
 }
 
-impl NamedStructure for SyncFolderHierarchy {
+impl EnvelopeBodyContents for SyncFolderHierarchy {
     fn name() -> &'static str {
         "SyncFolderHierarchy"
     }
@@ -42,7 +42,7 @@ pub struct SyncFolderHierarchyResponse {
 
 impl OperationResponse for SyncFolderHierarchyResponse {}
 
-impl NamedStructure for SyncFolderHierarchyResponse {
+impl EnvelopeBodyContents for SyncFolderHierarchyResponse {
     fn name() -> &'static str {
         "SyncFolderHierarchyResponse"
     }

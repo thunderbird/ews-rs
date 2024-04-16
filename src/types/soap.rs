@@ -2,17 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::marker::PhantomData;
-
 use quick_xml::{
     events::{BytesDecl, BytesEnd, BytesStart, Event},
     Reader, Writer,
 };
-use serde::{de::Visitor, Deserialize, Deserializer};
 
 use crate::{
     Error, MessageXml, Operation, OperationResponse, ResponseCode, SOAP_NS_URI, TYPES_NS_URI,
 };
+
+mod de;
+use self::de::DummyEnvelope;
 
 /// A SOAP envelope wrapping an EWS operation.
 ///
@@ -63,71 +63,6 @@ where
 {
     /// Populates an [`Envelope`] from raw XML.
     pub fn from_xml_document(document: &[u8]) -> Result<Self, Error> {
-        struct BodyVisitor<T>(PhantomData<T>);
-
-        impl<'de, T> Visitor<'de> for BodyVisitor<T>
-        where
-            T: OperationResponse,
-        {
-            type Value = T;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("EWS operation response body")
-            }
-
-            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-            where
-                A: serde::de::MapAccess<'de>,
-            {
-                let name: Option<String> = map.next_key()?;
-                if let Some(name) = name {
-                    let expected = T::name();
-                    if name.as_str() != expected {
-                        return Err(serde::de::Error::custom(format_args!(
-                            "unknown field `{}`, expected {}",
-                            name, expected
-                        )));
-                    }
-
-                    let value = map.next_value()?;
-
-                    // To satisfy quick-xml's serde impl, we need to consume the
-                    // final `None` key value in order to successfully complete.
-                    if let Some(name) = map.next_key::<String>()? {
-                        return Err(serde::de::Error::custom(format_args!(
-                            "unexpected field `{}`",
-                            name
-                        )));
-                    }
-
-                    return Ok(value);
-                }
-
-                Err(serde::de::Error::invalid_type(
-                    serde::de::Unexpected::Map,
-                    &self,
-                ))
-            }
-        }
-
-        fn deserialize_body<'de, D, T>(body: D) -> Result<T, D::Error>
-        where
-            D: Deserializer<'de>,
-            T: OperationResponse,
-        {
-            body.deserialize_map(BodyVisitor::<T>(PhantomData))
-        }
-
-        #[derive(Deserialize)]
-        #[serde(rename_all = "PascalCase")]
-        struct DummyEnvelope<T>
-        where
-            T: OperationResponse,
-        {
-            #[serde(deserialize_with = "deserialize_body")]
-            body: T,
-        }
-
         // The body of an envelope can contain a fault, indicating an error with
         // a request. We want to parse that and return it as the `Err` portion
         // of a result. However, Microsoft includes a field in their fault
@@ -453,7 +388,7 @@ pub struct FaultDetail {
 mod tests {
     use serde::Deserialize;
 
-    use crate::{types::sealed::NamedStructure, Error, OperationResponse};
+    use crate::{types::sealed::EnvelopeBodyContents, Error, OperationResponse};
 
     use super::Envelope;
 
@@ -469,7 +404,7 @@ mod tests {
 
         impl OperationResponse for SomeStruct {}
 
-        impl NamedStructure for SomeStruct {
+        impl EnvelopeBodyContents for SomeStruct {
             fn name() -> &'static str {
                 "Foo"
             }
@@ -496,7 +431,7 @@ mod tests {
 
         impl OperationResponse for Foo {}
 
-        impl NamedStructure for Foo {
+        impl EnvelopeBodyContents for Foo {
             fn name() -> &'static str {
                 "Foo"
             }
@@ -549,7 +484,7 @@ mod tests {
 
         impl OperationResponse for Foo {}
 
-        impl NamedStructure for Foo {
+        impl EnvelopeBodyContents for Foo {
             fn name() -> &'static str {
                 "Foo"
             }

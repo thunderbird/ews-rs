@@ -5,14 +5,39 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-pub trait Operation: XmlSerialize + sealed::NamedStructure {
+/// A marker trait for EWS operations.
+///
+/// Types implementing this trait may appear in requests to EWS as the operation
+/// to be performed.
+///
+/// # Usage
+///
+/// See [`Envelope`] for details.
+///
+/// [`Envelope`]: crate::soap::Envelope
+pub trait Operation: XmlSerialize + sealed::EnvelopeBodyContents {
+    /// The structure returned by EWS in response to requests containing this
+    /// operation.
     type Response: OperationResponse;
 }
 
-pub trait OperationResponse: for<'de> Deserialize<'de> + sealed::NamedStructure {}
+/// A marker trait for EWS operation responses.
+///
+/// Types implementing this trait may appear in responses from EWS after
+/// requesting an operation be performed.
+///
+/// # Usage
+///
+/// See [`Envelope`] for details.
+///
+/// [`Envelope`]: crate::soap::Envelope
+pub trait OperationResponse: for<'de> Deserialize<'de> + sealed::EnvelopeBodyContents {}
 
 pub(super) mod sealed {
-    pub trait NamedStructure {
+    /// A trait for structures which may appear in the body of a SOAP envelope.
+    pub trait EnvelopeBodyContents {
+        /// Gets the name of the element enclosing the contents of this
+        /// structure when represented in XML.
         fn name() -> &'static str;
     }
 }

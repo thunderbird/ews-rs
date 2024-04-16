@@ -6,7 +6,7 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::NamedStructure, BaseFolderId, Folder, FolderShape, Operation, OperationResponse,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, Folder, FolderShape, Operation, OperationResponse,
     ResponseClass, MESSAGES_NS_URI,
 };
 
@@ -24,7 +24,7 @@ impl Operation for GetFolder {
     type Response = GetFolderResponse;
 }
 
-impl NamedStructure for GetFolder {
+impl EnvelopeBodyContents for GetFolder {
     fn name() -> &'static str {
         "GetFolder"
     }
@@ -41,7 +41,7 @@ pub struct GetFolderResponse {
 
 impl OperationResponse for GetFolderResponse {}
 
-impl NamedStructure for GetFolderResponse {
+impl EnvelopeBodyContents for GetFolderResponse {
     fn name() -> &'static str {
         "GetFolderResponse"
     }
