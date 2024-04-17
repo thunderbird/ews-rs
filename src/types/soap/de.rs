@@ -8,9 +8,15 @@ use serde::{de::Visitor, Deserialize, Deserializer};
 
 use crate::OperationResponse;
 
+/// A helper for deserialization of SOAP envelopes.
+///
+/// This struct is declared separately from the more general [`Envelope`] type
+/// so that the latter can be used with types that are write-only.
+///
+/// [`Envelope`]: super::Envelope
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub(super) struct DummyEnvelope<T>
+pub(super) struct DeserializeEnvelope<T>
 where
     T: OperationResponse,
 {
@@ -50,7 +56,7 @@ where
                 let expected = T::name();
                 if name.as_str() != expected {
                     return Err(serde::de::Error::custom(format_args!(
-                        "unknown field `{}`, expected {}",
+                        "unknown element `{}`, expected {}",
                         name, expected
                     )));
                 }
@@ -64,7 +70,7 @@ where
                         // The response body contained more than one element,
                         // which violates our expectations.
                         Err(serde::de::Error::custom(format_args!(
-                            "unexpected field `{}`",
+                            "unexpected element `{}`",
                             name
                         )))
                     }

@@ -12,7 +12,7 @@ use crate::{
 };
 
 mod de;
-use self::de::DummyEnvelope;
+use self::de::DeserializeEnvelope;
 
 /// A SOAP envelope containing the body of an EWS operation or response.
 ///
@@ -77,7 +77,7 @@ where
             return Err(Error::RequestFault(Box::new(fault)));
         }
 
-        let envelope: DummyEnvelope<B> = quick_xml::de::from_reader(document)?;
+        let envelope: DeserializeEnvelope<B> = quick_xml::de::from_reader(document)?;
 
         Ok(Envelope {
             body: envelope.body,
