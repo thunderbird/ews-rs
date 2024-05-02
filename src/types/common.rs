@@ -13,7 +13,7 @@ pub(crate) const TYPES_NS_URI: &str = "http://schemas.microsoft.com/exchange/ser
 /// The folder properties which should be included in the response.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/foldershape>.
-#[derive(Debug, XmlSerialize)]
+#[derive(Debug, Default, XmlSerialize)]
 pub struct FolderShape {
     #[xml_struct(ns_prefix = "t")]
     pub base_shape: BaseShape,
@@ -22,10 +22,150 @@ pub struct FolderShape {
 /// The item properties which should be included in the response.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemshape>.
-#[derive(Debug, XmlSerialize)]
+#[derive(Debug, Default, XmlSerialize)]
 pub struct ItemShape {
+    /// The base set of properties to include, which may be extended by other
+    /// fields.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/baseshape>
     #[xml_struct(ns_prefix = "t")]
     pub base_shape: BaseShape,
+
+    /// Whether the MIME content of an item should be included.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/includemimecontent>
+    #[xml_struct(ns_prefix = "t")]
+    pub include_mime_content: Option<bool>,
+
+    /// A list of properties which should be included in addition to those
+    /// implied by other fields.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/additionalproperties>
+    #[xml_struct(ns_prefix = "t")]
+    pub additional_properties: Option<Vec<PathToElement>>,
+}
+
+/// An identifier for a property on an Exchange entity.
+#[derive(Debug, XmlSerialize)]
+#[xml_struct(variant_ns_prefix = "t")]
+pub enum PathToElement {
+    /// An identifier for an extended MAPI property.
+    ///
+    /// The full set of constraints on which properties may or must be set
+    /// together are not expressed in the structure of this variant. Please see
+    /// Microsoft's documentation for further details.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri>
+    // TODO: We can represent in a friendlier way with an enum, probably. A
+    // property is fully specified by a type and either:
+    // - A property set ID plus property name/ID, or
+    // - A property tag.
+    ExtendedFieldURI {
+        /// A well-known identifier for a property set.
+        #[xml_struct(attribute)]
+        distinguished_property_set_id: Option<DistinguishedPropertySet>,
+
+        /// A GUID representing a property set.
+        // TODO: This could use a strong type for representing a GUID.
+        #[xml_struct(attribute)]
+        property_set_id: Option<String>,
+
+        /// Specifies a property by integer tag.
+        // TODO: This should use an integer type, but it seems a hex
+        // representation is preferred, and we should restrict the possible
+        // values per the docs.
+        #[xml_struct(attribute)]
+        property_tag: Option<String>,
+
+        /// The name of a property within a specified property set.
+        #[xml_struct(attribute)]
+        property_name: Option<String>,
+
+        /// The dispatch ID of a property within a specified property set.
+        #[xml_struct(attribute)]
+        property_id: Option<String>,
+
+        /// The value type of the desired property.
+        #[xml_struct(attribute)]
+        property_type: PropertyType,
+    },
+
+    /// An identifier for a property given by a well-known string.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/fielduri>
+    #[allow(non_snake_case)]
+    FieldURI {
+        /// The well-known string.
+        // TODO: Adjust xml_struct to support field renaming to avoid non-snake
+        // case identifiers.
+        // TODO: We could use an enum for this field. It's just large and not
+        // worth typing out by hand.
+        #[xml_struct(attribute)]
+        field_URI: String,
+    },
+
+    /// An identifier for a specific element of a dictionary-based property.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/indexedfielduri>
+    #[allow(non_snake_case)]
+    IndexedFieldURI {
+        /// The well-known string identifier of the property.
+        #[xml_struct(attribute)]
+        field_URI: String,
+
+        /// The member within the dictionary to access.
+        #[xml_struct(attribute)]
+        field_index: String,
+    },
+}
+
+/// A well-known MAPI property set identifier.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#distinguishedpropertysetid-attribute>
+#[derive(Debug, XmlSerialize)]
+#[xml_struct(text)]
+pub enum DistinguishedPropertySet {
+    Address,
+    Appointment,
+    CalendarAssistant,
+    Common,
+    InternetHeaders,
+    Meeting,
+    PublicStrings,
+    Sharing,
+    Task,
+    UnifiedMessaging,
+}
+
+/// The type of the value of a MAPI property.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#propertytype-attribute>
+#[derive(Debug, XmlSerialize)]
+#[xml_struct(text)]
+pub enum PropertyType {
+    ApplicationTime,
+    ApplicationTimeArray,
+    Binary,
+    BinaryArray,
+    Boolean,
+    CLSID,
+    CLSIDArray,
+    Currency,
+    CurrencyArray,
+    Double,
+    DoubleArray,
+    Float,
+    FloatArray,
+    Integer,
+    IntegerArray,
+    Long,
+    LongArray,
+    Short,
+    ShortArray,
+    SystemTime,
+    SystemTimeArray,
+    String,
+    StringArray,
 }
 
 /// The base set of properties to be returned in response to our request.
@@ -50,7 +190,7 @@ pub enum BaseShape {
 }
 
 /// The success/failure status of an operation.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 pub enum ResponseClass {
     Success,
     Warning,
@@ -73,7 +213,7 @@ where
     }
 }
 
-/// An identifier for a remote folder.
+/// An identifier for an Exchange folder.
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
 pub enum BaseFolderId {
@@ -113,8 +253,41 @@ pub struct FolderId {
     pub change_key: Option<String>,
 }
 
+/// An identifier for an Exchange item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids>
+#[derive(Debug, XmlSerialize)]
+#[xml_struct(variant_ns_prefix = "t")]
+pub enum BaseItemId {
+    /// An identifier for a standard Exchange item.
+    ItemId {
+        #[xml_struct(attribute)]
+        id: String,
+
+        #[xml_struct(attribute)]
+        change_key: Option<String>,
+    },
+
+    // OccurrenceItemId { .. }
+    // RecurringMasterItemId { .. }
+}
+
+/// The unique identifier of an item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
+#[derive(Debug, Deserialize, XmlSerialize)]
+pub struct ItemId {
+    #[xml_struct(attribute)]
+    #[serde(rename = "@Id")]
+    pub id: String,
+
+    #[serde(rename = "@ChangeKey")]
+    #[xml_struct(attribute)]
+    pub change_key: Option<String>,
+}
+
 /// The representation of a folder in an EWS operation.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize)]
 pub enum Folder {
     /// A calendar folder in a mailbox.
     ///
@@ -181,6 +354,250 @@ pub enum Folder {
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
     },
+}
+
+/// An item which may appear as the result of a request to read or modify an
+/// Exchange item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
+#[derive(Debug, Deserialize)]
+pub enum RealItem {
+    Message(Message),
+}
+
+/// An item which may appear in an item-based attachment.
+///
+/// See [`Attachment::ItemAttachment`] for details.
+#[derive(Debug, Deserialize)]
+pub enum AttachmentItem {
+    // Item(Item),
+    Message(Message),
+    // CalendarItem(CalendarItem),
+    // Contact(Contact),
+    // Task(Task),
+    // MeetingMessage(MeetingMessage),
+    // MeetingRequest(MeetingRequest),
+    // MeetingResponse(MeetingResponse),
+    // MeetingCancellation(MeetingCancellation),
+}
+
+/// A date and time with second precision.
+// `time` provides an `Option<OffsetDateTime>` deserializer, but it does not
+// work with map fields which may be omitted, as in our case.
+#[derive(Debug, Deserialize)]
+pub struct DateTime(#[serde(with = "time::serde::iso8601")] pub time::OffsetDateTime);
+
+/// An email message.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Message {
+    /// The MIME content of the email.
+    pub mime_content: Option<MimeContent>,
+
+    /// The email's Exchange identifier.
+    pub item_id: ItemId,
+
+    /// The identifier for the containing folder.
+    pub parent_folder_id: Option<FolderId>,
+
+    pub item_class: Option<String>,
+    pub subject: Option<String>,
+    pub sensitivity: Option<Sensitivity>,
+    pub body: Option<Body>,
+    pub attachments: Option<Vec<Attachment>>,
+    pub date_time_received: Option<DateTime>,
+    pub size: Option<usize>,
+    pub categories: Option<Vec<Category>>,
+    pub in_reply_to: Option<String>,
+    pub is_submitted: Option<bool>,
+    pub is_draft: Option<bool>,
+    pub is_from_me: Option<bool>,
+    pub is_resend: Option<bool>,
+    pub is_unmodified: Option<bool>,
+    pub internet_message_headers: Option<InternetMessageHeaders>,
+    pub date_time_sent: Option<DateTime>,
+    pub date_time_created: Option<DateTime>,
+    pub reminder_due_by: Option<DateTime>,
+    pub reminder_is_set: Option<bool>,
+    pub reminder_minutes_before_start: Option<usize>,
+    pub display_cc: Option<String>,
+    pub display_to: Option<String>,
+    pub has_attachments: Option<bool>,
+    pub culture: Option<String>,
+    pub sender: Option<SingleRecipient>,
+    pub to_recipients: Option<Vec<Mailbox>>,
+    pub cc_recipients: Option<Vec<Mailbox>>,
+    pub bcc_recipients: Option<Vec<Mailbox>>,
+    pub is_read_receipt_requested: Option<bool>,
+    pub is_delivery_receipt_requested: Option<bool>,
+    pub conversation_index: Option<String>,
+    pub conversation_topic: Option<String>,
+    pub from: Option<SingleRecipient>,
+    pub internet_message_id: Option<String>,
+    pub is_read: Option<bool>,
+    pub is_response_requested: Option<bool>,
+    pub reply_to: Option<SingleRecipient>,
+    pub received_by: Option<SingleRecipient>,
+    pub received_representing: Option<SingleRecipient>,
+    pub last_modified_name: Option<String>,
+    pub last_modified_time: Option<DateTime>,
+    pub is_associated: Option<bool>,
+    pub conversation_id: Option<ItemId>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct InternetMessageHeaders {
+    pub internet_message_header: Vec<InternetMessageHeader>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct SingleRecipient {
+    pub mailbox: Mailbox,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Mailbox {
+    pub name: Option<String>,
+    pub email_address: String,
+    pub routing_type: Option<RoutingType>,
+    pub mailbox_type: Option<MailboxType>,
+    pub item_id: Option<ItemId>,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum RoutingType {
+    SMTP,
+    EX,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum MailboxType {
+    Mailbox,
+    PublicDL,
+    PrivateDL,
+    Contact,
+    PublicFolder,
+    Unknown,
+    OneOff,
+    GroupMailbox,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum Importance {
+    Low,
+    Normal,
+    High,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Category {
+    pub string: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum Sensitivity {
+    Normal,
+    Personal,
+    Private,
+    Confidential,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Body {
+    #[serde(rename = "@BodyType")]
+    pub body_type: BodyType,
+
+    #[serde(rename = "@IsTruncated")]
+    pub is_truncated: bool,
+
+    #[serde(rename = "$text")]
+    pub content: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum BodyType {
+    HTML,
+    Text,
+}
+
+/// An attachment to an Exchange item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attachments-ex15websvcsotherref>
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub enum Attachment {
+    /// An attachment containing an Exchange item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemattachment>
+    ItemAttachment {
+        attachment_id: AttachmentId,
+        name: String,
+        content_type: String,
+        content_id: String,
+        content_location: Option<String>,
+        size: Option<usize>,
+        last_modified_time: Option<String>,
+
+        /// Whether the attachment appears inline in the item body.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isinline>
+        is_inline: Option<bool>,
+
+        /// The attached item.
+        #[serde(rename = "$value")]
+        content: Option<AttachmentItem>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AttachmentId {
+    #[serde(rename = "@Id")]
+    pub id: String,
+
+    #[serde(rename = "@RootItemId")]
+    pub root_item_id: String,
+
+    #[serde(rename = "@RootItemChangeKey")]
+    pub root_item_change_key: String,
+}
+
+/// The content of an item, represented according to MIME (Multipurpose Internet
+/// Mail Extensions).
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mimecontent>
+#[derive(Debug, Deserialize)]
+pub struct MimeContent {
+    /// The character set of the MIME content if it contains [RFC 2045]-encoded
+    /// text.
+    ///
+    /// [RFC 2045]: https://datatracker.ietf.org/doc/html/rfc2045
+    #[serde(rename = "@CharacterSet")]
+    pub character_set: Option<String>,
+
+    /// The item content.
+    #[serde(rename = "$text")]
+    pub content: String,
+}
+
+/// The headers of an Exchange item's MIME content.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/internetmessageheader>
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct InternetMessageHeader {
+    /// The name of the header.
+    #[serde(rename = "@HeaderName")]
+    pub header_name: String,
+
+    /// The value of the header.
+    #[serde(rename = "$text")]
+    pub value: String,
 }
 
 /// Structured data for diagnosing or responding to an EWS error.
