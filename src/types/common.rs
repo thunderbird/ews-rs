@@ -267,7 +267,6 @@ pub enum BaseItemId {
         #[xml_struct(attribute)]
         change_key: Option<String>,
     },
-
     // OccurrenceItemId { .. }
     // RecurringMasterItemId { .. }
 }
