@@ -122,7 +122,7 @@ pub enum PathToElement {
 /// A well-known MAPI property set identifier.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#distinguishedpropertysetid-attribute>
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Copy, Debug, XmlSerialize)]
 #[xml_struct(text)]
 pub enum DistinguishedPropertySet {
     Address,
@@ -140,7 +140,7 @@ pub enum DistinguishedPropertySet {
 /// The type of the value of a MAPI property.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#propertytype-attribute>
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Copy, Debug, XmlSerialize)]
 #[xml_struct(text)]
 pub enum PropertyType {
     ApplicationTime,
@@ -172,7 +172,7 @@ pub enum PropertyType {
 /// Additional properties may be specified by the parent element.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/baseshape>.
-#[derive(Debug, Default, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Default, XmlSerialize)]
 #[xml_struct(text)]
 pub enum BaseShape {
     /// Only the IDs of any items or folders returned.
@@ -392,23 +392,39 @@ pub struct DateTime(#[serde(with = "time::serde::iso8601")] pub time::OffsetDate
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Message {
-    /// The MIME content of the email.
+    /// The MIME content of the item.
     pub mime_content: Option<MimeContent>,
 
-    /// The email's Exchange identifier.
+    /// The item's Exchange identifier.
     pub item_id: ItemId,
 
     /// The identifier for the containing folder.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/parentfolderid>
     pub parent_folder_id: Option<FolderId>,
 
+    /// The Exchange class value of the item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemclass>
     pub item_class: Option<String>,
+
+    /// The subject of the item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/subject>
     pub subject: Option<String>,
+
     pub sensitivity: Option<Sensitivity>,
     pub body: Option<Body>,
     pub attachments: Option<Vec<Attachment>>,
     pub date_time_received: Option<DateTime>,
     pub size: Option<usize>,
-    pub categories: Option<Vec<Category>>,
+
+    /// A list of categories describing an item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/categories-ex15websvcsotherref>
+    pub categories: Option<Vec<StringElement>>,
+
+    pub importance: Option<Importance>,
     pub in_reply_to: Option<String>,
     pub is_submitted: Option<bool>,
     pub is_draft: Option<bool>,
@@ -452,29 +468,53 @@ pub struct InternetMessageHeaders {
     pub internet_message_header: Vec<InternetMessageHeader>,
 }
 
+/// A container for a single mailbox.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct SingleRecipient {
     pub mailbox: Mailbox,
 }
 
+/// A reference to a user or address which can send or receive mail.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
+    /// The name of this mailbox's user.
     pub name: Option<String>,
+
+    /// The email address for this mailbox.
     pub email_address: String,
+
+    /// The protocol used in routing to this mailbox.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/routingtype-emailaddress>
     pub routing_type: Option<RoutingType>,
+
+    /// The type of sender/recipient represented by this mailbox.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailboxtype>
     pub mailbox_type: Option<MailboxType>,
+
+    /// An identifier for a contact or list of contacts corresponding to this
+    /// mailbox.
     pub item_id: Option<ItemId>,
 }
 
-#[derive(Debug, Deserialize)]
+/// A protocol used in routing mail.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/routingtype-emailaddress>
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub enum RoutingType {
     SMTP,
     EX,
 }
 
-#[derive(Debug, Deserialize)]
+/// The type of sender or recipient a mailbox represents.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailboxtype>
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub enum MailboxType {
     Mailbox,
     PublicDL,
@@ -486,20 +526,30 @@ pub enum MailboxType {
     GroupMailbox,
 }
 
-#[derive(Debug, Deserialize)]
+/// The priority level of an item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/importance>
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub enum Importance {
     Low,
     Normal,
     High,
 }
 
+/// A string value.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/string>
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct Category {
+pub struct StringElement {
+    /// The string content.
     pub string: String,
 }
 
-#[derive(Debug, Deserialize)]
+/// The sensitivity of the contents of an item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/sensitivity>
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub enum Sensitivity {
     Normal,
     Personal,
@@ -507,19 +557,28 @@ pub enum Sensitivity {
     Confidential,
 }
 
+/// The body of an item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/body>
 #[derive(Debug, Deserialize)]
 pub struct Body {
+    /// The content type of the body.
     #[serde(rename = "@BodyType")]
     pub body_type: BodyType,
 
+    /// Whether the body has been truncated.
     #[serde(rename = "@IsTruncated")]
     pub is_truncated: bool,
 
+    /// The content of the body.
     #[serde(rename = "$text")]
     pub content: String,
 }
 
-#[derive(Debug, Deserialize)]
+/// The content type of an item's body.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/body>
+#[derive(Clone, Copy, Debug, Deserialize)]
 pub enum BodyType {
     HTML,
     Text,
@@ -535,13 +594,41 @@ pub enum Attachment {
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemattachment>
     ItemAttachment {
+        /// An identifier for the attachment.
         attachment_id: AttachmentId,
+
+        /// The name of the attachment.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/name-attachmenttype>
         name: String,
+
+        /// The MIME type of the attachment's content.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contenttype>
         content_type: String,
+
+        /// An arbitrary identifier for the attachment.
+        ///
+        /// This field is not set by Exchange and is intended for use by
+        /// external applications.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contentid>
         content_id: String,
+
+        /// A URI representing the location of the attachment's content.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contentlocation>
         content_location: Option<String>,
+
+        /// The size of the attachment's content in bytes.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/size>
         size: Option<usize>,
-        last_modified_time: Option<String>,
+
+        /// The most recent modification time for the attachment.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/lastmodifiedtime>
+        last_modified_time: Option<DateTime>,
 
         /// Whether the attachment appears inline in the item body.
         ///
@@ -554,14 +641,20 @@ pub enum Attachment {
     },
 }
 
+/// An identifier for an attachment.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attachmentid>
 #[derive(Debug, Deserialize)]
 pub struct AttachmentId {
+    /// A unique identifier for the attachment.
     #[serde(rename = "@Id")]
     pub id: String,
 
+    /// The unique identifier of the item to which it is attached.
     #[serde(rename = "@RootItemId")]
     pub root_item_id: String,
 
+    /// The change key of the item to which it is attached.
     #[serde(rename = "@RootItemChangeKey")]
     pub root_item_change_key: String,
 }

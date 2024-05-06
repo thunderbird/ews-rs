@@ -73,7 +73,7 @@ pub struct Ignore {
     item_id: Vec<ItemId>,
 }
 
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Copy, Debug, XmlSerialize)]
 pub enum SyncScope {
     NormalItems,
     NormalAndAssociatedItems,
