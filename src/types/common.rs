@@ -415,7 +415,7 @@ pub struct Message {
 
     pub sensitivity: Option<Sensitivity>,
     pub body: Option<Body>,
-    pub attachments: Option<Vec<Attachment>>,
+    pub attachments: Option<Attachments>,
     pub date_time_received: Option<DateTime>,
     pub size: Option<usize>,
 
@@ -442,9 +442,9 @@ pub struct Message {
     pub has_attachments: Option<bool>,
     pub culture: Option<String>,
     pub sender: Option<SingleRecipient>,
-    pub to_recipients: Option<Vec<Mailbox>>,
-    pub cc_recipients: Option<Vec<Mailbox>>,
-    pub bcc_recipients: Option<Vec<Mailbox>>,
+    pub to_recipients: Option<ArrayOfRecipients>,
+    pub cc_recipients: Option<ArrayOfRecipients>,
+    pub bcc_recipients: Option<ArrayOfRecipients>,
     pub is_read_receipt_requested: Option<bool>,
     pub is_delivery_receipt_requested: Option<bool>,
     pub conversation_index: Option<String>,
@@ -462,17 +462,34 @@ pub struct Message {
     pub conversation_id: Option<ItemId>,
 }
 
+/// A list of attachments.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attachments-ex15websvcsotherref>
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct InternetMessageHeaders {
-    pub internet_message_header: Vec<InternetMessageHeader>,
+pub struct Attachments {
+    #[serde(rename = "$value")]
+    pub inner: Vec<Attachment>,
 }
 
-/// A container for a single mailbox.
+/// A single mailbox.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct SingleRecipient {
     pub mailbox: Mailbox,
+}
+
+/// A list of mailboxes.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct ArrayOfRecipients {
+    pub mailbox: Vec<Mailbox>,
+}
+
+/// A list of Internet Message Format headers.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct InternetMessageHeaders {
+    pub internet_message_header: Vec<InternetMessageHeader>,
 }
 
 /// A reference to a user or address which can send or receive mail.
@@ -568,11 +585,11 @@ pub struct Body {
 
     /// Whether the body has been truncated.
     #[serde(rename = "@IsTruncated")]
-    pub is_truncated: bool,
+    pub is_truncated: Option<bool>,
 
     /// The content of the body.
     #[serde(rename = "$text")]
-    pub content: String,
+    pub content: Option<String>,
 }
 
 /// The content type of an item's body.
@@ -588,11 +605,11 @@ pub enum BodyType {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attachments-ex15websvcsotherref>
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "PascalCase")]
 pub enum Attachment {
     /// An attachment containing an Exchange item.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemattachment>
+    #[serde(rename_all = "PascalCase")]
     ItemAttachment {
         /// An identifier for the attachment.
         attachment_id: AttachmentId,
@@ -613,7 +630,7 @@ pub enum Attachment {
         /// external applications.
         ///
         /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contentid>
-        content_id: String,
+        content_id: Option<String>,
 
         /// A URI representing the location of the attachment's content.
         ///
@@ -635,9 +652,69 @@ pub enum Attachment {
         /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isinline>
         is_inline: Option<bool>,
 
-        /// The attached item.
-        #[serde(rename = "$value")]
-        content: Option<AttachmentItem>,
+        // XXX: With this field in place, parsing will fail if there is no
+        // `AttachmentItem` in the response.
+        // See https://github.com/tafia/quick-xml/issues/683
+        // /// The attached item.
+        // #[serde(rename = "$value")]
+        // content: Option<AttachmentItem>,
+    },
+
+    /// An attachment containing a file.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/fileattachment>
+    #[serde(rename_all = "PascalCase")]
+    FileAttachment {
+        /// An identifier for the attachment.
+        attachment_id: AttachmentId,
+
+        /// The name of the attachment.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/name-attachmenttype>
+        name: String,
+
+        /// The MIME type of the attachment's content.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contenttype>
+        content_type: String,
+
+        /// An arbitrary identifier for the attachment.
+        ///
+        /// This field is not set by Exchange and is intended for use by
+        /// external applications.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contentid>
+        content_id: Option<String>,
+
+        /// A URI representing the location of the attachment's content.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contentlocation>
+        content_location: Option<String>,
+
+        /// The size of the attachment's content in bytes.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/size>
+        size: Option<usize>,
+
+        /// The most recent modification time for the attachment.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/lastmodifiedtime>
+        last_modified_time: Option<DateTime>,
+
+        /// Whether the attachment appears inline in the item body.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isinline>
+        is_inline: Option<bool>,
+
+        /// Whether the attachment represents a contact photo.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/iscontactphoto>
+        is_contact_photo: Option<bool>,
+
+        /// The base64-encoded content of the attachment.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/content>
+        content: Option<String>,
     },
 }
 
@@ -652,11 +729,11 @@ pub struct AttachmentId {
 
     /// The unique identifier of the item to which it is attached.
     #[serde(rename = "@RootItemId")]
-    pub root_item_id: String,
+    pub root_item_id: Option<String>,
 
     /// The change key of the item to which it is attached.
     #[serde(rename = "@RootItemChangeKey")]
-    pub root_item_change_key: String,
+    pub root_item_change_key: Option<String>,
 }
 
 /// The content of an item, represented according to MIME (Multipurpose Internet

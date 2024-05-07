@@ -111,11 +111,13 @@ pub enum Change {
     /// A deletion of an item.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/delete-itemsync>
+    #[serde(rename_all = "PascalCase")]
     Delete {
         /// The EWS ID for the deleted item.
         item_id: ItemId,
     },
 
+    #[serde(rename_all = "PascalCase")]
     ReadFlagChange {
         item_id: ItemId,
         is_read: bool,

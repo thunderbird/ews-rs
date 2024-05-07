@@ -77,7 +77,17 @@ where
             return Err(Error::RequestFault(Box::new(fault)));
         }
 
-        let envelope: DeserializeEnvelope<B> = quick_xml::de::from_reader(document)?;
+        let de = &mut quick_xml::de::Deserializer::from_reader(document);
+
+        // `serde_path_to_error` ensures that we can debug the
+        let envelope: DeserializeEnvelope<B> = match serde_path_to_error::deserialize(de) {
+            Ok(envelope) => envelope,
+            Err(err) => {
+                log::debug!("Failed to deserialize: {err:?}");
+
+                return Err(err.into_inner().into());
+            }
+        };
 
         Ok(Envelope {
             body: envelope.body,
