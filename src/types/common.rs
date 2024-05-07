@@ -651,7 +651,6 @@ pub enum Attachment {
         ///
         /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isinline>
         is_inline: Option<bool>,
-
         // XXX: With this field in place, parsing will fail if there is no
         // `AttachmentItem` in the response.
         // See https://github.com/tafia/quick-xml/issues/683

@@ -118,8 +118,5 @@ pub enum Change {
     },
 
     #[serde(rename_all = "PascalCase")]
-    ReadFlagChange {
-        item_id: ItemId,
-        is_read: bool,
-    },
+    ReadFlagChange { item_id: ItemId, is_read: bool },
 }
