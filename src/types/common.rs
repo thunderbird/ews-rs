@@ -60,6 +60,7 @@ pub enum PathToElement {
     // property is fully specified by a type and either:
     // - A property set ID plus property name/ID, or
     // - A property tag.
+    // https://github.com/thunderbird/ews-rs/issues/9
     ExtendedFieldURI {
         /// A well-known identifier for a property set.
         #[xml_struct(attribute)]
@@ -98,6 +99,7 @@ pub enum PathToElement {
         /// The well-known string.
         // TODO: Adjust xml_struct to support field renaming to avoid non-snake
         // case identifiers.
+        // https://github.com/thunderbird/xml-struct-rs/issues/6
         // TODO: We could use an enum for this field. It's just large and not
         // worth typing out by hand.
         #[xml_struct(attribute)]
@@ -256,6 +258,7 @@ pub struct FolderId {
 /// An identifier for an Exchange item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids>
+// N.B.: Commented-out variants are not yet implemented.
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
 pub enum BaseItemId {
@@ -367,6 +370,7 @@ pub enum RealItem {
 /// An item which may appear in an item-based attachment.
 ///
 /// See [`Attachment::ItemAttachment`] for details.
+// N.B.: Commented-out variants are not yet implemented.
 #[derive(Debug, Deserialize)]
 pub enum AttachmentItem {
     // Item(Item),
@@ -522,8 +526,9 @@ pub struct Mailbox {
 /// A protocol used in routing mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/routingtype-emailaddress>
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize)]
 pub enum RoutingType {
+    #[default]
     SMTP,
     EX,
 }

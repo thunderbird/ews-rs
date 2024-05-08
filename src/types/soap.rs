@@ -79,15 +79,11 @@ where
 
         let de = &mut quick_xml::de::Deserializer::from_reader(document);
 
-        // `serde_path_to_error` ensures that we can debug the
-        let envelope: DeserializeEnvelope<B> = match serde_path_to_error::deserialize(de) {
-            Ok(envelope) => envelope,
-            Err(err) => {
-                log::debug!("Failed to deserialize: {err:?}");
-
-                return Err(err.into_inner().into());
-            }
-        };
+        // `serde_path_to_error` ensures that we get sufficient information to
+        // debug errors in deserialization. serde's default errors only provide
+        // the immediate error with no context; this gives us a description of
+        // the context within the structure.
+        let envelope: DeserializeEnvelope<B> = serde_path_to_error::deserialize(de)?;
 
         Ok(Envelope {
             body: envelope.body,

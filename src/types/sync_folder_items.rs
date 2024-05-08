@@ -6,18 +6,44 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, BaseFolderId, ItemId, ItemShape, Operation,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, BaseItemId, ItemId, ItemShape, Operation,
     OperationResponse, RealItem, ResponseClass, MESSAGES_NS_URI,
 };
 
+/// A request for a list of items which have been created, updated, or deleted
+/// server-side.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/syncfolderitems>
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct SyncFolderItems {
+    /// A description of the information to be included in the response for each
+    /// changed item.
     pub item_shape: ItemShape,
+
+    /// The ID of the folder to sync.
     pub sync_folder_id: BaseFolderId,
+
+    /// The synchronization state after which to list changes.
+    ///
+    /// If `None`, the response will include `Create` changes for each item
+    /// which is contained in the requested folder.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/syncstate-ex15websvcsotherref>
     pub sync_state: Option<String>,
-    pub ignore: Option<Ignore>,
+
+    /// A list of item IDs for which changes should not be returned.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/ignore>
+    pub ignore: Option<ArrayOfBaseItemIds>,
+
+    /// The maximum number of changes to return in the response.
+    ///
+    /// This value must be in the range `1..=512`.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/maxchangesreturned>
     pub max_changes_returned: u16,
+
     pub sync_scope: Option<SyncScope>,
 }
 
@@ -31,6 +57,9 @@ impl EnvelopeBodyContents for SyncFolderItems {
     }
 }
 
+/// A response to a [`SyncFolderItems`] request.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/syncfolderitemsresponse>
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct SyncFolderItemsResponse {
@@ -57,20 +86,28 @@ pub struct ResponseMessages {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct SyncFolderItemsResponseMessage {
-    /// The success value of the corresponding request.
+    /// The status of the corresponding request, i.e. whether it succeeded or
+    /// resulted in an error.
     #[serde(rename = "@ResponseClass")]
     pub response_class: ResponseClass,
 
+    /// An identifier for the synchronization state following application of the
+    /// changes included in this response.
     pub sync_state: String,
 
+    /// Whether all relevant item changes have been synchronized following this
+    /// response.
     pub includes_last_item_in_range: bool,
 
+    /// The collection of changes between the prior synchronization state and
+    /// the one represented by this response.
     pub changes: Changes,
 }
 
+/// An ordered collection of identifiers for Exchange items.
 #[derive(Debug, XmlSerialize)]
-pub struct Ignore {
-    item_id: Vec<ItemId>,
+pub struct ArrayOfBaseItemIds {
+    item_id: Vec<BaseItemId>,
 }
 
 #[derive(Clone, Copy, Debug, XmlSerialize)]

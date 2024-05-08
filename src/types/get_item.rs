@@ -10,10 +10,22 @@ use crate::{
     RealItem, ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
+/// A request for the properties of one or more Exchange items, e.g. messages,
+/// calendar events, or contacts.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/getitem>
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct GetItem {
+    /// A description of the information to be included in the response for each
+    /// item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemshape>
     pub item_shape: ItemShape,
+
+    /// The Exchange identifiers of the items which should be fetched.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids>
     pub item_ids: Vec<BaseItemId>,
 }
 
@@ -27,6 +39,9 @@ impl EnvelopeBodyContents for GetItem {
     }
 }
 
+/// A response to a [`GetItem`] request.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/getitemresponse>
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct GetItemResponse {
@@ -50,7 +65,8 @@ pub struct ResponseMessages {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct GetItemResponseMessage {
-    /// The success value of the corresponding request.
+    /// The status of the corresponding request, i.e. whether it succeeded or
+    /// resulted in an error.
     #[serde(rename = "@ResponseClass")]
     pub response_class: ResponseClass,
 
