@@ -593,6 +593,8 @@ pub struct Body {
     pub is_truncated: Option<bool>,
 
     /// The content of the body.
+    // TODO: It's not immediately obvious why this tag may be empty, but it has
+    // been encountered in real world responses. Needs a closer look.
     #[serde(rename = "$text")]
     pub content: Option<String>,
 }
