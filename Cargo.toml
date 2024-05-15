@@ -11,5 +11,5 @@ quick-xml = { version = "0.31.0", features = ["serde", "serialize"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_path_to_error = "0.1.11"
 thiserror = "1.0.57"
-time = { version = "0.3.23", features = ["parsing", "serde"] }
+time = { version = "0.3.23", features = ["formatting", "parsing", "serde"] }
 xml_struct = { git = "https://github.com/thunderbird/xml-struct-rs.git", rev = "0374b50878596a08ef9c9ac2dfcc7325b9c39b83", version = "0.1.0" }
