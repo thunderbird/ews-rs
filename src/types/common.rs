@@ -404,7 +404,7 @@ impl XmlSerialize for DateTime {
         let time = self
             .0
             .format(&Iso8601::DEFAULT)
-            .map_err(|err| xml_struct::Error::Format(err.into()))?;
+            .map_err(|err| xml_struct::Error::Value(err.into()))?;
 
         time.serialize_child_nodes(writer)
     }
