@@ -392,8 +392,8 @@ pub enum AttachmentItem {
 pub struct DateTime(#[serde(with = "time::serde::iso8601")] pub time::OffsetDateTime);
 
 impl XmlSerialize for DateTime {
-    /// Serialize this `DateTime` as an XML content node, by formatting the
-    /// innder [`time::OffsetDateTime`] to an ISO 8601 compliant string.
+    /// Serializes a `DateTime` as an XML text content node by formatting the
+    /// inner [`time::OffsetDateTime`] as an ISO 8601-compliant string.
     fn serialize_child_nodes<W>(
         &self,
         writer: &mut quick_xml::Writer<W>,
@@ -548,6 +548,7 @@ pub struct Mailbox {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/routingtype-emailaddress>
 #[derive(Clone, Copy, Debug, Default, Deserialize, XmlSerialize)]
+#[xml_struct(text)]
 pub enum RoutingType {
     #[default]
     SMTP,
@@ -558,6 +559,7 @@ pub enum RoutingType {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailboxtype>
 #[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[xml_struct(text)]
 pub enum MailboxType {
     Mailbox,
     PublicDL,
@@ -573,6 +575,7 @@ pub enum MailboxType {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/importance>
 #[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[xml_struct(text)]
 pub enum Importance {
     Low,
     Normal,
@@ -593,6 +596,7 @@ pub struct StringElement {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/sensitivity>
 #[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[xml_struct(text)]
 pub enum Sensitivity {
     Normal,
     Personal,
