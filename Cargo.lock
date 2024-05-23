@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "anyhow"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "224afbd727c3d6e4b90103ece64b8d1b67fbb1973b1046c2281eed3f3803f800"
+
+[[package]]
 name = "ews"
 version = "0.1.0"
 dependencies = [
@@ -157,8 +163,9 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 [[package]]
 name = "xml_struct"
 version = "0.1.0"
-source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=24f6adb2651b5ade5bd3b7b971f64063131598ac#24f6adb2651b5ade5bd3b7b971f64063131598ac"
+source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=87723b90425d474fd29095d8b710baefd7c9b13a#87723b90425d474fd29095d8b710baefd7c9b13a"
 dependencies = [
+ "anyhow",
  "quick-xml",
  "thiserror",
  "xml_struct_derive",
@@ -167,7 +174,7 @@ dependencies = [
 [[package]]
 name = "xml_struct_derive"
 version = "0.1.0"
-source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=24f6adb2651b5ade5bd3b7b971f64063131598ac#24f6adb2651b5ade5bd3b7b971f64063131598ac"
+source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=87723b90425d474fd29095d8b710baefd7c9b13a#87723b90425d474fd29095d8b710baefd7c9b13a"
 dependencies = [
  "proc-macro2",
  "quote",
