@@ -6,7 +6,8 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, BaseFolderId, Items, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, Items, Operation, OperationResponse,
+    ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
 /// Describes how an item is handled once it has been created, if it's a message
