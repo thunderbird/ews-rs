@@ -478,6 +478,7 @@ pub struct Message {
     pub sender: Option<SingleRecipient>,
     pub to_recipients: Option<ArrayOfRecipients>,
     pub cc_recipients: Option<ArrayOfRecipients>,
+    #[xml_struct(ns_prefix = "t")]
     pub bcc_recipients: Option<ArrayOfRecipients>,
     pub is_read_receipt_requested: Option<bool>,
     #[xml_struct(ns_prefix = "t")]
