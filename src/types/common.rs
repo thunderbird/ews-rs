@@ -278,7 +278,7 @@ pub enum BaseItemId {
 /// The unique identifier of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
 pub struct ItemId {
     #[xml_struct(attribute)]
     #[serde(rename = "@Id")]
@@ -359,11 +359,20 @@ pub enum Folder {
     },
 }
 
+/// An array of items.
+#[derive(Debug, Deserialize, XmlSerialize)]
+pub struct Items {
+    #[serde(rename = "$value", default)]
+    #[xml_struct(flatten)]
+    pub inner: Vec<RealItem>,
+}
+
 /// An item which may appear as the result of a request to read or modify an
 /// Exchange item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
 #[derive(Debug, Deserialize, XmlSerialize)]
+#[xml_struct(variant_ns_prefix = "t")]
 pub enum RealItem {
     Message(Message),
 }
@@ -413,10 +422,11 @@ impl XmlSerialize for DateTime {
 /// An email message.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Default, Debug, Deserialize, XmlSerialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Message {
     /// The MIME content of the item.
+    #[xml_struct(ns_prefix = "t")]
     pub mime_content: Option<MimeContent>,
 
     /// The item's Exchange identifier.
@@ -470,6 +480,7 @@ pub struct Message {
     pub cc_recipients: Option<ArrayOfRecipients>,
     pub bcc_recipients: Option<ArrayOfRecipients>,
     pub is_read_receipt_requested: Option<bool>,
+    #[xml_struct(ns_prefix = "t")]
     pub is_delivery_receipt_requested: Option<bool>,
     pub conversation_index: Option<String>,
     pub conversation_topic: Option<String>,
