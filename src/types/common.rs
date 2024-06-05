@@ -278,7 +278,7 @@ pub enum BaseItemId {
 /// The unique identifier of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Debug, Deserialize, XmlSerialize)]
 pub struct ItemId {
     #[xml_struct(attribute)]
     #[serde(rename = "@Id")]
@@ -486,6 +486,7 @@ pub struct Message {
     pub conversation_index: Option<String>,
     pub conversation_topic: Option<String>,
     pub from: Option<SingleRecipient>,
+    #[xml_struct(ns_prefix = "t")]
     pub internet_message_id: Option<String>,
     pub is_read: Option<bool>,
     pub is_response_requested: Option<bool>,
