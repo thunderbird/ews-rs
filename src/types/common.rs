@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use time::format_description::well_known::Iso8601;
 use xml_struct::XmlSerialize;
 
@@ -278,7 +278,7 @@ pub enum BaseItemId {
 /// The unique identifier of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
 pub struct ItemId {
     #[xml_struct(attribute)]
     #[serde(rename = "@Id")]
@@ -476,8 +476,14 @@ pub struct Message {
     pub has_attachments: Option<bool>,
     pub culture: Option<String>,
     pub sender: Option<Recipient>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_recipients")]
     pub to_recipients: Option<Vec<Recipient>>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_recipients")]
     pub cc_recipients: Option<Vec<Recipient>>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_recipients")]
     #[xml_struct(ns_prefix = "t")]
     pub bcc_recipients: Option<Vec<Recipient>>,
     pub is_read_receipt_requested: Option<bool>,
@@ -517,6 +523,34 @@ pub struct Recipient {
     pub mailbox: Mailbox,
 }
 
+/// A util function to deserialize a list of recipients. This is necessary
+/// because quick-xml's serde data model requires the presence of an
+/// intermediate type when dealing with lists, and this is not compatible with
+/// our model for serialization. Note that we could directly deserialize into a
+/// Vec<Mailbox>, which would also simplify this function a bit, but this would
+/// mean using different models to represent a single vs multiple recipient(s).
+fn deserialize_recipients<'de, D>(deserializer: D) -> Result<Option<Vec<Recipient>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "PascalCase")]
+    struct MailboxSequence {
+        mailbox: Vec<Mailbox>,
+    }
+
+    let seq = MailboxSequence::deserialize(deserializer)?;
+
+    Ok(Some(
+        seq.mailbox
+            .iter()
+            .map(|mailbox| Recipient {
+                mailbox: mailbox.clone(),
+            })
+            .collect(),
+    ))
+}
+
 /// A list of Internet Message Format headers.
 #[derive(Debug, Deserialize, XmlSerialize)]
 #[serde(rename_all = "PascalCase")]
@@ -527,7 +561,7 @@ pub struct InternetMessageHeaders {
 /// A reference to a user or address which can send or receive mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.
