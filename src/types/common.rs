@@ -475,24 +475,24 @@ pub struct Message {
     pub display_to: Option<String>,
     pub has_attachments: Option<bool>,
     pub culture: Option<String>,
-    pub sender: Option<SingleRecipient>,
-    pub to_recipients: Option<ArrayOfRecipients>,
-    pub cc_recipients: Option<ArrayOfRecipients>,
+    pub sender: Option<Recipient>,
+    pub to_recipients: Option<Vec<Recipient>>,
+    pub cc_recipients: Option<Vec<Recipient>>,
     #[xml_struct(ns_prefix = "t")]
-    pub bcc_recipients: Option<ArrayOfRecipients>,
+    pub bcc_recipients: Option<Vec<Recipient>>,
     pub is_read_receipt_requested: Option<bool>,
     #[xml_struct(ns_prefix = "t")]
     pub is_delivery_receipt_requested: Option<bool>,
     pub conversation_index: Option<String>,
     pub conversation_topic: Option<String>,
-    pub from: Option<SingleRecipient>,
+    pub from: Option<Recipient>,
     #[xml_struct(ns_prefix = "t")]
     pub internet_message_id: Option<String>,
     pub is_read: Option<bool>,
     pub is_response_requested: Option<bool>,
-    pub reply_to: Option<SingleRecipient>,
-    pub received_by: Option<SingleRecipient>,
-    pub received_representing: Option<SingleRecipient>,
+    pub reply_to: Option<Recipient>,
+    pub received_by: Option<Recipient>,
+    pub received_representing: Option<Recipient>,
     pub last_modified_name: Option<String>,
     pub last_modified_time: Option<DateTime>,
     pub is_associated: Option<bool>,
@@ -512,15 +512,9 @@ pub struct Attachments {
 /// A single mailbox.
 #[derive(Debug, Deserialize, XmlSerialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct SingleRecipient {
+pub struct Recipient {
+    #[xml_struct(ns_prefix = "t")]
     pub mailbox: Mailbox,
-}
-
-/// A list of mailboxes.
-#[derive(Debug, Deserialize, XmlSerialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct ArrayOfRecipients {
-    pub mailbox: Vec<Mailbox>,
 }
 
 /// A list of Internet Message Format headers.
@@ -537,9 +531,11 @@ pub struct InternetMessageHeaders {
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.
+    #[xml_struct(ns_prefix = "t")]
     pub name: Option<String>,
 
     /// The email address for this mailbox.
+    #[xml_struct(ns_prefix = "t")]
     pub email_address: String,
 
     /// The protocol used in routing to this mailbox.
