@@ -35,7 +35,7 @@ pub struct CreateItem {
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
     #[xml_struct(attribute)]
-    pub message_disposition: MessageDisposition,
+    pub message_disposition: Option<MessageDisposition>,
 
     /// The folder in which to store an item once it has been created.
     ///
@@ -80,12 +80,12 @@ impl EnvelopeBodyContents for CreateItemResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
-    pub create_item_response_message: Vec<CreateItemResponseResponseMessage>,
+    pub create_item_response_message: Vec<CreateItemResponseMessage>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct CreateItemResponseResponseMessage {
+pub struct CreateItemResponseMessage {
     /// The status of the corresponding request, i.e. whether it succeeded or
     /// resulted in an error.
     #[serde(rename = "@ResponseClass")]

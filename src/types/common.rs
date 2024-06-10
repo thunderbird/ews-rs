@@ -430,78 +430,154 @@ pub struct Message {
     pub mime_content: Option<MimeContent>,
 
     /// The item's Exchange identifier.
+    #[xml_struct(ns_prefix = "t")]
     pub item_id: Option<ItemId>,
 
     /// The identifier for the containing folder.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/parentfolderid>
+    #[xml_struct(ns_prefix = "t")]
     pub parent_folder_id: Option<FolderId>,
 
     /// The Exchange class value of the item.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemclass>
+    #[xml_struct(ns_prefix = "t")]
     pub item_class: Option<String>,
 
     /// The subject of the item.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/subject>
+    #[xml_struct(ns_prefix = "t")]
     pub subject: Option<String>,
 
+    #[xml_struct(ns_prefix = "t")]
     pub sensitivity: Option<Sensitivity>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub body: Option<Body>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub attachments: Option<Attachments>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub date_time_received: Option<DateTime>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub size: Option<usize>,
 
     /// A list of categories describing an item.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/categories-ex15websvcsotherref>
+    #[xml_struct(ns_prefix = "t")]
     pub categories: Option<Vec<StringElement>>,
 
-    pub importance: Option<Importance>,
-    pub in_reply_to: Option<String>,
-    pub is_submitted: Option<bool>,
-    pub is_draft: Option<bool>,
-    pub is_from_me: Option<bool>,
-    pub is_resend: Option<bool>,
-    pub is_unmodified: Option<bool>,
-    pub internet_message_headers: Option<InternetMessageHeaders>,
-    pub date_time_sent: Option<DateTime>,
-    pub date_time_created: Option<DateTime>,
-    pub reminder_due_by: Option<DateTime>,
-    pub reminder_is_set: Option<bool>,
-    pub reminder_minutes_before_start: Option<usize>,
-    pub display_cc: Option<String>,
-    pub display_to: Option<String>,
-    pub has_attachments: Option<bool>,
-    pub culture: Option<String>,
-    pub sender: Option<Recipient>,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_recipients")]
-    pub to_recipients: Option<Vec<Recipient>>,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_recipients")]
-    pub cc_recipients: Option<Vec<Recipient>>,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_recipients")]
     #[xml_struct(ns_prefix = "t")]
-    pub bcc_recipients: Option<Vec<Recipient>>,
+    pub importance: Option<Importance>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub in_reply_to: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub is_submitted: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub is_draft: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub is_from_me: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub is_resend: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub is_unmodified: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub internet_message_headers: Option<InternetMessageHeaders>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub date_time_sent: Option<DateTime>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub date_time_created: Option<DateTime>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub reminder_due_by: Option<DateTime>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub reminder_is_set: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub reminder_minutes_before_start: Option<usize>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub display_cc: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub display_to: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub has_attachments: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub culture: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub sender: Option<Recipient>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub to_recipients: Option<ArrayOfRecipients>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub cc_recipients: Option<ArrayOfRecipients>,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub bcc_recipients: Option<ArrayOfRecipients>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub is_read_receipt_requested: Option<bool>,
+
     #[xml_struct(ns_prefix = "t")]
     pub is_delivery_receipt_requested: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub conversation_index: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub conversation_topic: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub from: Option<Recipient>,
+
     #[xml_struct(ns_prefix = "t")]
     pub internet_message_id: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub is_read: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub is_response_requested: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub reply_to: Option<Recipient>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub received_by: Option<Recipient>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub received_representing: Option<Recipient>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub last_modified_name: Option<String>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub last_modified_time: Option<DateTime>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub is_associated: Option<bool>,
+
+    #[xml_struct(ns_prefix = "t")]
     pub conversation_id: Option<ItemId>,
 }
 
@@ -514,6 +590,13 @@ pub struct Attachments {
     #[xml_struct(flatten)]
     pub inner: Vec<Attachment>,
 }
+
+// A newtype around a vector of `Recipient`s, that is deserialized using
+// `deserialize_recipients`.
+#[derive(Debug, Default, Deserialize, XmlSerialize)]
+pub struct ArrayOfRecipients(
+    #[serde(deserialize_with = "deserialize_recipients")] pub Vec<Recipient>,
+);
 
 /// A single mailbox.
 #[derive(Debug, Deserialize, XmlSerialize)]
@@ -528,11 +611,11 @@ pub struct Recipient {
 /// `quick-xml`'s `serde` implementation requires the presence of an
 /// intermediate type when dealing with lists, and this is not compatible with
 /// our model for serialization.
-/// 
+///
 /// We could directly deserialize into a `Vec<Mailbox>`, which would also
 /// simplify this function a bit, but this would mean using different models
 /// to represent single vs. multiple recipient(s).
-fn deserialize_recipients<'de, D>(deserializer: D) -> Result<Option<Vec<Recipient>>, D::Error>
+fn deserialize_recipients<'de, D>(deserializer: D) -> Result<Vec<Recipient>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -544,14 +627,11 @@ where
 
     let seq = MailboxSequence::deserialize(deserializer)?;
 
-    Ok(Some(
-        seq.mailbox
-            .iter()
-            .map(|mailbox| Recipient {
-                mailbox: mailbox.clone(),
-            })
-            .collect(),
-    ))
+    Ok(seq
+        .mailbox
+        .into_iter()
+        .map(|mailbox| Recipient { mailbox })
+        .collect())
 }
 
 /// A list of Internet Message Format headers.
