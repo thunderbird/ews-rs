@@ -278,7 +278,7 @@ pub enum BaseItemId {
 /// The unique identifier of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
 pub struct ItemId {
     #[xml_struct(attribute)]
     #[serde(rename = "@Id")]
@@ -599,7 +599,7 @@ pub struct ArrayOfRecipients(
 );
 
 /// A single mailbox.
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Debug, Deserialize, XmlSerialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Recipient {
     #[xml_struct(ns_prefix = "t")]
@@ -644,7 +644,7 @@ pub struct InternetMessageHeaders {
 /// A reference to a user or address which can send or receive mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.
@@ -673,7 +673,7 @@ pub struct Mailbox {
 /// A protocol used in routing mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/routingtype-emailaddress>
-#[derive(Clone, Copy, Debug, Default, Deserialize, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, XmlSerialize, PartialEq)]
 #[xml_struct(text)]
 pub enum RoutingType {
     #[default]
@@ -684,7 +684,7 @@ pub enum RoutingType {
 /// The type of sender or recipient a mailbox represents.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailboxtype>
-#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq)]
 #[xml_struct(text)]
 pub enum MailboxType {
     Mailbox,
@@ -954,4 +954,106 @@ pub struct MessageXml {
     /// The duration in milliseconds to wait before making additional requests
     /// if the server is throttling operations.
     pub back_off_milliseconds: Option<usize>,
+}
+
+#[cfg(test)]
+mod tests {
+    use quick_xml::Writer;
+
+    use super::*;
+    use crate::Error;
+
+    /// Tests that an [`ArrayOfRecipients`] correctly serializes into XML. It
+    /// should serialize as multiple `<t:Mailbox>` elements, one per [`Recipient`].
+    #[test]
+    fn serialize_array_of_recipients() -> Result<(), Error> {
+        // Define the recipients to serialize.
+        let alice = Recipient {
+            mailbox: Mailbox {
+                name: Some("Alice Test".into()),
+                email_address: "alice@test.com".into(),
+                routing_type: None,
+                mailbox_type: None,
+                item_id: None,
+            },
+        };
+
+        let bob = Recipient {
+            mailbox: Mailbox {
+                name: Some("Bob Test".into()),
+                email_address: "bob@test.com".into(),
+                routing_type: None,
+                mailbox_type: None,
+                item_id: None,
+            },
+        };
+
+        let recipients = ArrayOfRecipients(vec![alice, bob]);
+
+        // Serialize into XML.
+        let mut writer = {
+            let inner: Vec<u8> = Default::default();
+            Writer::new(inner)
+        };
+        recipients.serialize_as_element(&mut writer, "Recipients")?;
+
+        // Read the contents of the `Writer`'s buffer.
+        let buf = writer.into_inner();
+        let actual = std::str::from_utf8(buf.as_slice())
+            .map_err(|e| Error::UnexpectedResponse(e.to_string().into_bytes()))?;
+
+        // Ensure the structure of the XML document is correct.
+        let expected = "<Recipients><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Bob Test</t:Name><t:EmailAddress>bob@test.com</t:EmailAddress></t:Mailbox></Recipients>";
+        assert_eq!(expected, actual);
+
+        Ok(())
+    }
+
+    /// Tests that deserializing a sequence of `<t:Mailbox>` XML elements
+    /// results in an [`ArrayOfRecipients`] with one [`Recipient`] per
+    /// `<t:Mailbox>` element.
+    #[test]
+    fn deserialize_array_of_recipients() -> Result<(), Error> {
+        // The raw XML to deserialize.
+        let xml = "<Recipients><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Bob Test</t:Name><t:EmailAddress>bob@test.com</t:EmailAddress></t:Mailbox></Recipients>";
+
+        // Deserialize the raw XML, with `serde_path_to_error` to help
+        // troubleshoot any issue.
+        let mut de = quick_xml::de::Deserializer::from_reader(xml.as_bytes());
+        let recipients: ArrayOfRecipients = serde_path_to_error::deserialize(&mut de)?;
+
+        // Ensure we have the right number of recipients in the resulting
+        // `ArrayOfRecipients`.
+        assert_eq!(recipients.0.len(), 2);
+
+        // Ensure the first recipient correctly has a name and address.
+        assert_eq!(
+            recipients.0[0],
+            Recipient {
+                mailbox: Mailbox {
+                    name: Some("Alice Test".into()),
+                    email_address: "alice@test.com".into(),
+                    routing_type: None,
+                    mailbox_type: None,
+                    item_id: None,
+                },
+            }
+        );
+
+        // Ensure the second recipient correctly has a name and address.
+        assert_eq!(
+            recipients.0[1],
+            Recipient {
+                mailbox: Mailbox {
+                    name: Some("Bob Test".into()),
+                    email_address: "bob@test.com".into(),
+                    routing_type: None,
+                    mailbox_type: None,
+                    item_id: None,
+                },
+            }
+        );
+
+        Ok(())
+    }
 }
