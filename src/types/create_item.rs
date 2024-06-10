@@ -10,8 +10,7 @@ use crate::{
     ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
-/// Describes how an item is handled once it has been created, if it's a message
-/// item.
+/// The action an Exchange server will take upon creating a `Message` item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
 #[derive(Debug, XmlSerialize)]
@@ -28,22 +27,26 @@ pub enum MessageDisposition {
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct CreateItem {
-    /// Describes how an item is handled once it has been created, if it's a
-    /// message item.
+    /// The action the Exchange server will take upon creating this item.
+    ///
+    /// This field is required for and only applicable to [`Message`] items.
+    ///
+    /// [`Message`]: `crate::Message`
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
     #[xml_struct(attribute)]
     pub message_disposition: MessageDisposition,
 
-    /// The folder in which to store an item once it's been created, if it's a
-    /// message item.
+    /// The folder in which to store an item once it has been created.
     ///
-    /// This is ignored if the message disposition is SendOnly.
+    /// This is ignored if `message_disposition` is [`SendOnly`].
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/saveditemfolderid>
+    ///
+    /// [`SendOnly`]: [`MessageDisposition::SendOnly`]
     pub saved_item_folder_id: Option<BaseFolderId>,
 
-    /// The item(s) to create.
+    /// The item or items to create.
     pub items: Items,
 }
 

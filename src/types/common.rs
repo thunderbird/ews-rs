@@ -523,12 +523,15 @@ pub struct Recipient {
     pub mailbox: Mailbox,
 }
 
-/// A util function to deserialize a list of recipients. This is necessary
-/// because quick-xml's serde data model requires the presence of an
+/// Deserializes a list of recipients.
+///
+/// `quick-xml`'s `serde` implementation requires the presence of an
 /// intermediate type when dealing with lists, and this is not compatible with
-/// our model for serialization. Note that we could directly deserialize into a
-/// Vec<Mailbox>, which would also simplify this function a bit, but this would
-/// mean using different models to represent a single vs multiple recipient(s).
+/// our model for serialization.
+/// 
+/// We could directly deserialize into a `Vec<Mailbox>`, which would also
+/// simplify this function a bit, but this would mean using different models
+/// to represent single vs. multiple recipient(s).
 fn deserialize_recipients<'de, D>(deserializer: D) -> Result<Option<Vec<Recipient>>, D::Error>
 where
     D: Deserializer<'de>,
