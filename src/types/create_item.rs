@@ -6,8 +6,8 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, BaseFolderId, Items, Operation, OperationResponse,
-    ResponseClass, ResponseCode, MESSAGES_NS_URI,
+    types::sealed::EnvelopeBodyContents, ArrayOfRecipients, BaseFolderId, Items, MimeContent,
+    Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
 /// The action an Exchange server will take upon creating a `Message` item.
@@ -47,7 +47,38 @@ pub struct CreateItem {
     pub saved_item_folder_id: Option<BaseFolderId>,
 
     /// The item or items to create.
-    pub items: Items,
+    pub items: Vec<Item>,
+}
+
+/// A new item that appears in a CreateItem request.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
+#[derive(Debug, XmlSerialize)]
+pub enum Item {
+    Message(Message),
+}
+
+/// An email message to create.
+///
+/// This struct follows the same specification to [`common::Message`], but has a
+/// few differences that allow the creation of new messages without forcing any
+/// tradeoff on strictness when deserializing; for example not making the item
+/// ID a required field.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>
+///
+/// [`common::message`]: crate::Message
+#[derive(Debug, Default, XmlSerialize)]
+pub struct Message {
+    /// The MIME content of the item.
+    pub mime_content: Option<MimeContent>,
+    // Whether to request a delivery receipt.
+    pub is_delivery_receipt_requested: Option<bool>,
+    // The message ID for the message, semantically identical to the Message-ID
+    // header.
+    pub internet_message_id: Option<String>,
+    // Recipients to include as Bcc, who won't be included in the MIME content.
+    pub bcc_recipients: Option<ArrayOfRecipients>,
 }
 
 impl Operation for CreateItem {
