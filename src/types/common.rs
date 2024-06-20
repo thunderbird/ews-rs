@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Deserializer};
 use time::format_description::well_known::Iso8601;
 use xml_struct::XmlSerialize;
@@ -379,6 +381,7 @@ pub enum RealItem {
 ///
 /// See [`Attachment::ItemAttachment`] for details.
 // N.B.: Commented-out variants are not yet implemented.
+#[non_exhaustive]
 #[derive(Debug, Deserialize)]
 pub enum AttachmentItem {
     // Item(Item),
@@ -500,12 +503,26 @@ pub struct Attachments {
     pub inner: Vec<Attachment>,
 }
 
-// A newtype around a vector of `Recipient`s, that is deserialized using
-// `deserialize_recipients`.
+/// A newtype around a vector of `Recipient`s, that is deserialized using
+/// `deserialize_recipients`.
 #[derive(Debug, Default, Deserialize, XmlSerialize)]
 pub struct ArrayOfRecipients(
     #[serde(deserialize_with = "deserialize_recipients")] pub Vec<Recipient>,
 );
+
+impl Deref for ArrayOfRecipients {
+    type Target = Vec<Recipient>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ArrayOfRecipients {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 /// A single mailbox.
 #[derive(Debug, Deserialize, XmlSerialize, PartialEq)]
@@ -937,8 +954,8 @@ mod tests {
 
         // Ensure the first recipient correctly has a name and address.
         assert_eq!(
-            recipients.0[0],
-            Recipient {
+            recipients.get(0).expect("no recipient at index 0"),
+            &Recipient {
                 mailbox: Mailbox {
                     name: Some("Alice Test".into()),
                     email_address: "alice@test.com".into(),
@@ -951,8 +968,8 @@ mod tests {
 
         // Ensure the second recipient correctly has a name and address.
         assert_eq!(
-            recipients.0[1],
-            Recipient {
+            recipients.get(1).expect("no recipient at index 1"),
+            &Recipient {
                 mailbox: Mailbox {
                     name: Some("Bob Test".into()),
                     email_address: "bob@test.com".into(),

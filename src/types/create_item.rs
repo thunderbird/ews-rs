@@ -53,9 +53,19 @@ pub struct CreateItem {
 /// A new item that appears in a CreateItem request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
+// N.B.: Commented-out variants are not yet implemented.
+#[non_exhaustive]
 #[derive(Debug, XmlSerialize)]
 pub enum Item {
+    // Item(Item),
     Message(Message),
+    // CalendarItem(CalendarItem),
+    // Contact(Contact),
+    // Task(Task),
+    // MeetingMessage(MeetingMessage),
+    // MeetingRequest(MeetingRequest),
+    // MeetingResponse(MeetingResponse),
+    // MeetingCancellation(MeetingCancellation),
 }
 
 /// An email message to create.
