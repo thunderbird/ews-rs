@@ -570,7 +570,7 @@ pub struct InternetMessageHeaders {
 /// A reference to a user or address which can send or receive mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
-#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.
