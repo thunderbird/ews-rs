@@ -6,9 +6,8 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, ArrayOfRecipients, BaseFolderId, DistinguishedPropertySet,
-    Items, MimeContent, Operation, OperationResponse, PropertyType, ResponseClass, ResponseCode,
-    MESSAGES_NS_URI,
+    types::sealed::EnvelopeBodyContents, ArrayOfRecipients, BaseFolderId, ExtendedFieldURI, Items,
+    MimeContent, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
 /// The action an Exchange server will take upon creating a `Message` item.
@@ -36,7 +35,7 @@ pub struct CreateItem {
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
     #[xml_struct(attribute)]
-    pub message_disposition: Option<MessageDisposition>,
+    pub message_disposition: MessageDisposition,
 
     /// The folder in which to store an item once it has been created.
     ///
@@ -102,41 +101,6 @@ pub struct Message {
     // Extended MAPI properties to set on the message.
     #[xml_struct(ns_prefix = "t")]
     pub extended_property: Option<Vec<ExtendedProperty>>,
-}
-
-/// The identifier for an extended MAPI property.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri>
-// N.B.: This is heavily duplicated from `PathToElement::ExtendedFieldURI`,
-// which follows the same structure. However, xml-struct doesn't currently
-// support using a nested structure to define an element's attributes, see
-// https://github.com/thunderbird/xml-struct-rs/issues/9
-#[derive(Debug, XmlSerialize)]
-pub struct ExtendedFieldURI {
-    /// A well-known identifier for a property set.
-    #[xml_struct(attribute)]
-    pub distinguished_property_set_id: Option<DistinguishedPropertySet>,
-
-    /// A GUID representing a property set.
-    // TODO: This could use a strong type for representing a GUID.
-    #[xml_struct(attribute)]
-    pub property_set_id: Option<String>,
-
-    /// Specifies a property by integer tag.
-    #[xml_struct(attribute)]
-    pub property_tag: Option<String>,
-
-    /// The name of a property within a specified property set.
-    #[xml_struct(attribute)]
-    pub property_name: Option<String>,
-
-    /// The dispatch ID of a property within a specified property set.
-    #[xml_struct(attribute)]
-    pub property_id: Option<String>,
-
-    /// The value type of the desired property.
-    #[xml_struct(attribute)]
-    pub property_type: PropertyType,
 }
 
 /// An extended MAPI property to set on the message.
