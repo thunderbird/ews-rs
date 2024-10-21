@@ -49,7 +49,7 @@ pub struct ItemShape {
 }
 
 /// An identifier for a property on an Exchange entity.
-#[derive(Debug, XmlSerialize)]
+#[derive(Debug, Deserialize, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
 pub enum PathToElement {
     /// An identifier for an extended MAPI property.
@@ -162,7 +162,7 @@ pub struct ExtendedFieldURI {
 /// A well-known MAPI property set identifier.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#distinguishedpropertysetid-attribute>
-#[derive(Clone, Copy, Debug, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
 #[xml_struct(text)]
 pub enum DistinguishedPropertySet {
     Address,
@@ -177,10 +177,21 @@ pub enum DistinguishedPropertySet {
     UnifiedMessaging,
 }
 
+/// The action an Exchange server will take upon creating or updating a `Message` item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[xml_struct(text)]
+pub enum MessageDisposition {
+    SaveOnly,
+    SendOnly,
+    SendAndSaveCopy,
+}
+
 /// The type of the value of a MAPI property.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#propertytype-attribute>
-#[derive(Clone, Copy, Debug, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
 #[xml_struct(text)]
 pub enum PropertyType {
     ApplicationTime,
@@ -297,7 +308,7 @@ pub struct FolderId {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids>
 // N.B.: Commented-out variants are not yet implemented.
-#[derive(Debug, XmlSerialize)]
+#[derive(Debug, Deserialize, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
 pub enum BaseItemId {
     /// An identifier for a standard Exchange item.
@@ -315,7 +326,7 @@ pub enum BaseItemId {
 /// The unique identifier of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
-#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Default, Debug, Deserialize, XmlSerialize, PartialEq)]
 pub struct ItemId {
     #[xml_struct(attribute)]
     #[serde(rename = "@Id")]
@@ -458,7 +469,7 @@ impl XmlSerialize for DateTime {
 /// An email message.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize, XmlSerialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Message {
     /// The MIME content of the item.
