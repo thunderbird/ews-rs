@@ -5,8 +5,10 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::{BaseItemId, MESSAGES_NS_URI, Operation, OperationResponse, ResponseClass, ResponseCode};
 use crate::types::sealed::EnvelopeBodyContents;
+use crate::{
+    BaseItemId, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
+};
 
 /// Describes how an item deletion should be performed.
 ///
