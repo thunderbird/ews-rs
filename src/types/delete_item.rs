@@ -10,7 +10,7 @@ use crate::{
     BaseItemId, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
-/// Describes how an item deletion should be performed.
+/// The manner in which the item or items are deleted.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem#deletetype-attribute>
 #[derive(Debug, XmlSerialize)]
@@ -43,7 +43,7 @@ pub enum AffectedTaskOccurrences {
     SpecifiedOccurrenceOnly,
 }
 
-/// A request to delete one or more Exchange item(s).
+/// A request to delete one or more Exchange items.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem>
 #[derive(Debug, XmlSerialize)]
