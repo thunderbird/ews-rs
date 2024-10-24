@@ -113,7 +113,7 @@ impl EnvelopeBodyContents for DeleteItemResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
-    pub create_item_response_message: Vec<DeleteItemResponseMessage>,
+    pub delete_item_response_message: Vec<DeleteItemResponseMessage>,
 }
 
 #[derive(Debug, Deserialize)]
