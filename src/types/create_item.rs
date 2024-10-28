@@ -7,7 +7,8 @@ use xml_struct::XmlSerialize;
 
 use crate::{
     types::sealed::EnvelopeBodyContents, ArrayOfRecipients, BaseFolderId, ExtendedFieldURI, Items,
-    MimeContent, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI, MessageDisposition
+    MessageDisposition, MimeContent, Operation, OperationResponse, ResponseClass, ResponseCode,
+    MESSAGES_NS_URI,
 };
 
 /// A request to create (and optionally send) one or more Exchange item(s).

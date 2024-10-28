@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::types::common::{BaseItemId, PathToElement, Message, MessageDisposition};
+use crate::types::common::{BaseItemId, Message, MessageDisposition, PathToElement};
 use crate::{
-    types::sealed::EnvelopeBodyContents, Items, Operation,
-    OperationResponse, ResponseClass, ResponseCode,
+    types::sealed::EnvelopeBodyContents, Items, Operation, OperationResponse, ResponseClass,
+    ResponseCode,
 };
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
@@ -32,7 +32,7 @@ pub enum ConflictResolution {
 pub struct ItemChange {
     pub item_id: BaseItemId, // Represents the <t:ItemId> element with Id and ChangeKey.
 
-    pub updates: Updates,    // Represents the <t:Updates> element containing the changes.
+    pub updates: Updates, // Represents the <t:Updates> element containing the changes.
 }
 
 /// Represents a list of item changes without an explicit container tag.
@@ -49,8 +49,8 @@ pub struct ItemChanges {
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setitemfield>
 #[derive(Clone, Debug, XmlSerialize)]
 pub struct SetItemField {
-    pub field_uri: PathToElement,  // Reference to the field being updated.
-    pub message: Message,          // The new value for the specified field.
+    pub field_uri: PathToElement, // Reference to the field being updated.
+    pub message: Message,         // The new value for the specified field.
 }
 
 /// Struct representing updates to be applied to an item.
@@ -88,7 +88,6 @@ pub struct UpdateItem {
 }
 
 impl UpdateItem {
-
     /// Adds another `ItemChange` to the `UpdateItem` request.
     pub fn add_item_change(&mut self, item_change: ItemChange) {
         self.item_changes.item_changes.push(item_change);
@@ -113,7 +112,6 @@ impl EnvelopeBodyContents for UpdateItem {
 pub struct UpdateItemResponse {
     pub response_messages: ResponseMessages,
 }
-
 
 impl OperationResponse for UpdateItemResponse {}
 

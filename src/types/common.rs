@@ -177,8 +177,6 @@ pub enum DistinguishedPropertySet {
     UnifiedMessaging,
 }
 
-
-
 /// The action an Exchange server will take upon creating a `Message` item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
