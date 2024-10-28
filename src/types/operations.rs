@@ -19,6 +19,10 @@ pub trait Operation: XmlSerialize + sealed::EnvelopeBodyContents {
     /// The structure returned by EWS in response to requests containing this
     /// operation.
     type Response: OperationResponse;
+
+    fn name() -> &'static str {
+        <Self as sealed::EnvelopeBodyContents>::name()
+    }
 }
 
 /// A marker trait for EWS operation responses.
