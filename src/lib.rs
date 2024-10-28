@@ -8,7 +8,7 @@ mod types;
 
 pub use types::*;
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error)]
 pub enum Error {
     #[error("failed to serialize structure as XML")]
     Serialize(#[from] xml_struct::Error),
