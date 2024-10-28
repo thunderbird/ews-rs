@@ -13,11 +13,14 @@ use xml_struct::XmlSerialize;
 /// Identifies the type of conflict resolution to try during an update. The default value is AutoResolve.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#conflictresolution-attribute>
-#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Default, XmlSerialize)]
 #[xml_struct(text)]
 pub enum ConflictResolution {
     NeverOverwrite,
+
+    #[default]
     AutoResolve,
+
     AlwaysOverwrite,
 }
 
