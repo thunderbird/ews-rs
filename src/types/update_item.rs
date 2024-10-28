@@ -10,7 +10,8 @@ use crate::{
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-/// Identifies the type of conflict resolution to try during an update. The default value is AutoResolve.
+/// The method used by the Exchange server to resolve conflicts between item
+/// updates.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#conflictresolution-attribute>
 #[derive(Clone, Copy, Debug, Default, XmlSerialize)]
