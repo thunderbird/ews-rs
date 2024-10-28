@@ -31,7 +31,10 @@ pub trait Operation: XmlSerialize + sealed::EnvelopeBodyContents + std::fmt::Deb
 /// See [`Envelope`] for details.
 ///
 /// [`Envelope`]: crate::soap::Envelope
-pub trait OperationResponse: for<'de> Deserialize<'de> + sealed::EnvelopeBodyContents + std::fmt::Debug {}
+pub trait OperationResponse:
+    for<'de> Deserialize<'de> + sealed::EnvelopeBodyContents + std::fmt::Debug
+{
+}
 
 pub(super) mod sealed {
     /// A trait for structures which may appear in the body of a SOAP envelope.
