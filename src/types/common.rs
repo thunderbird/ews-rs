@@ -327,7 +327,7 @@ pub enum BaseItemId {
 /// The unique identifier of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
-#[derive(Clone, Default, Debug, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
 pub struct ItemId {
     #[xml_struct(attribute)]
     #[serde(rename = "@Id")]
@@ -419,7 +419,7 @@ pub struct Items {
 /// Exchange item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
 pub enum RealItem {
     Message(Message),
 }
@@ -475,8 +475,9 @@ impl XmlSerialize for DateTime {
 pub struct Message {
     /// The MIME content of the item.
     pub mime_content: Option<MimeContent>,
+
     /// The item's Exchange identifier.
-    pub item_id: ItemId,
+    pub item_id: Option<ItemId>,
 
     /// The identifier for the containing folder.
     ///
@@ -617,7 +618,7 @@ pub struct InternetMessageHeaders {
 /// A reference to a user or address which can send or receive mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
-#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.

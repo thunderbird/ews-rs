@@ -10,88 +10,32 @@ use crate::{
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-/// The method used by the Exchange server to resolve conflicts between item
-/// updates.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#conflictresolution-attribute>
-#[derive(Clone, Copy, Debug, Default, XmlSerialize)]
-#[xml_struct(text)]
-pub enum ConflictResolution {
-    NeverOverwrite,
-
-    #[default]
-    AutoResolve,
-
-    AlwaysOverwrite,
-}
-
-/// Represents a change to an individual item, including the item ID and updates.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchange>
-#[derive(Clone, Debug, XmlSerialize)]
-pub struct ItemChange {
-    pub item_id: BaseItemId, // Represents the <t:ItemId> element with Id and ChangeKey.
-
-    pub updates: Updates, // Represents the <t:Updates> element containing the changes.
-}
-
-/// Represents a list of item changes without an explicit container tag.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchanges>
-#[derive(Clone, Debug, XmlSerialize)]
-pub struct ItemChanges {
-    pub item_changes: Vec<ItemChange>,
-}
-
-/// Struct representing the field update operation.
-///
-/// This struct contains details of the field that needs to be updated.
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setitemfield>
-#[derive(Clone, Debug, XmlSerialize)]
-pub struct SetItemField {
-    pub field_uri: PathToElement, // Reference to the field being updated.
-    pub message: Message,         // The new value for the specified field.
-}
-
-/// Struct representing updates to be applied to an item.
-///
-/// This struct is used to create an UpdateItem request.
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-item>
-#[derive(Clone, Debug, XmlSerialize)]
-pub struct Updates {
-    pub set_item_field: SetItemField,
-}
-
-/// Represents the UpdateItem operation for interacting with the EWS server.
+/// A request to update properties of one or more Exchange items.
 #[derive(Clone, Debug, XmlSerialize)]
 pub struct UpdateItem {
-    /// Describes how the item will be handled after it is updated.
-    /// The MessageDisposition attribute is required for message items, including meeting
-    /// messages such as meeting cancellations, meeting requests, and meeting responses.
+    /// The action the Exchange server will take upon updating this item.
+    ///
+    /// This field is required for and only applicable to [`Message`] items.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#messagedisposition-attribute>
     #[xml_struct(attribute)]
     pub message_disposition: Option<MessageDisposition>,
 
-    /// Identifies the type of conflict resolution to try during an update.
-    /// The default value is AutoResolve.
+    /// The method the Exchange server will use to resolve conflicts between
+    /// updates.
+    ///
+    /// If omitted, the server will default to [`AutoResolve`].
+    ///
+    /// [`AutoResolve`]: `ConflictResolution::AutoResolve`
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#conflictresolution-attribute>
     #[xml_struct(attribute)]
     pub conflict_resolution: Option<ConflictResolution>,
 
-    /// Contains an array of ItemChange elements that identify items and
-    /// the updates to apply to the items.
+    /// A list of items and their corresponding updates.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchanges>
-    pub item_changes: ItemChanges, // Represents the list of item changes to be included in the request.
-}
-
-impl UpdateItem {
-    /// Adds another `ItemChange` to the `UpdateItem` request.
-    pub fn add_item_change(&mut self, item_change: ItemChange) {
-        self.item_changes.item_changes.push(item_change);
-    }
+    pub item_changes: ItemChanges,
 }
 
 impl Operation for UpdateItem {
@@ -139,4 +83,67 @@ pub struct UpdateItemResponseMessage {
     pub message_text: Option<String>,
 
     pub items: Items,
+}
+
+/// The method used by the Exchange server to resolve conflicts between item
+/// updates.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#conflictresolution-attribute>
+#[derive(Clone, Copy, Debug, Default, XmlSerialize)]
+#[xml_struct(text)]
+pub enum ConflictResolution {
+    /// Conflicts will cause the update to fail and return an error.
+    NeverOverwrite,
+
+    /// The Exchange server will attempt to resolve any conflicts automatically.
+    #[default]
+    AutoResolve,
+
+    /// Conflicting fields will be overwritten with the contents of the update.
+    AlwaysOverwrite,
+}
+
+/// A list of updates to items, with each element representing a single item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchanges>
+#[derive(Clone, Debug, XmlSerialize)]
+pub struct ItemChanges {
+    pub item_changes: Vec<ItemChange>,
+}
+
+/// One or more updates to a single item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchange>
+#[derive(Clone, Debug, XmlSerialize)]
+pub struct ItemChange {
+    /// The ID of the item to be updated.
+    pub item_id: BaseItemId,
+
+    /// The changes to make to the item, including appending, setting, or
+    /// deleting fields.
+    pub updates: Updates,
+}
+
+/// A list of changes to fields, with each element representing a single change.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-item>
+#[derive(Clone, Debug, XmlSerialize)]
+pub struct Updates {
+    #[xml_struct(flatten)]
+    pub inner: Vec<ItemChangeDescription>,
+}
+
+/// An individual change to a single field.
+#[derive(Clone, Debug, XmlSerialize)]
+pub enum ItemChangeDescription {
+    /// An update setting the value of a single field.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setitemfield>
+    SetItemField {
+        /// The field to be updated.
+        field_uri: PathToElement,
+
+        /// The new value of the specified field.
+        message: Message,
+    },
 }
