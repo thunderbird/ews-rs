@@ -24,21 +24,18 @@ pub enum ConflictResolution {
 /// Represents a change to an individual item, including the item ID and updates.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchange>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 pub struct ItemChange {
-    #[serde(rename = "t:ItemId")]
     pub item_id: BaseItemId, // Represents the <t:ItemId> element with Id and ChangeKey.
 
-    #[serde(rename = "t:Updates")]
     pub updates: Updates,    // Represents the <t:Updates> element containing the changes.
 }
 
 /// Represents a list of item changes without an explicit container tag.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchanges>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 pub struct ItemChanges {
-    #[serde(rename = "t:ItemChange")]
     pub item_changes: Vec<ItemChange>,
 }
 
@@ -46,11 +43,9 @@ pub struct ItemChanges {
 ///
 /// This struct contains details of the field that needs to be updated.
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setitemfield>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 pub struct SetItemField {
-    #[serde(rename = "t:FieldURI")]
     pub field_uri: PathToElement,  // Reference to the field being updated.
-    #[serde(rename = "t:Message")]
     pub message: Message,          // The new value for the specified field.
 }
 
@@ -58,15 +53,13 @@ pub struct SetItemField {
 ///
 /// This struct is used to create an UpdateItem request.
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-item>
-#[derive(Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 pub struct Updates {
-    #[serde(rename = "t:SetItemField")]
     pub set_item_field: SetItemField,
 }
 
 /// Represents the UpdateItem operation for interacting with the EWS server.
-#[derive(Debug, Deserialize, XmlSerialize)]
-#[serde(rename_all = "PascalCase")]
+#[derive(Clone, Debug, XmlSerialize)]
 pub struct UpdateItem {
     /// Describes how the item will be handled after it is updated.
     /// The MessageDisposition attribute is required for message items, including meeting
@@ -99,7 +92,7 @@ impl UpdateItem {
 }
 
 impl Operation for UpdateItem {
-    type Response = UpdateItemResponse; // Define the appropriate response type if needed.
+    type Response = UpdateItemResponse;
 }
 
 impl EnvelopeBodyContents for UpdateItem {
@@ -111,7 +104,7 @@ impl EnvelopeBodyContents for UpdateItem {
 /// A response to an [`UpdateItem`] request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitemresponse>
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct UpdateItemResponse {
     pub response_messages: ResponseMessages,
@@ -126,18 +119,17 @@ impl EnvelopeBodyContents for UpdateItemResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
     pub update_item_response_message: Vec<UpdateItemResponseMessage>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct UpdateItemResponseMessage {
     /// The status of the corresponding request, i.e. whether it succeeded or
     /// resulted in an error.
-    #[serde(rename = "@ResponseClass")]
     pub response_class: ResponseClass,
 
     pub response_code: Option<ResponseCode>,

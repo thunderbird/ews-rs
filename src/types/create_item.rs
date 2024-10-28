@@ -7,24 +7,13 @@ use xml_struct::XmlSerialize;
 
 use crate::{
     types::sealed::EnvelopeBodyContents, ArrayOfRecipients, BaseFolderId, ExtendedFieldURI, Items,
-    MimeContent, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
+    MimeContent, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI, MessageDisposition
 };
-
-/// The action an Exchange server will take upon creating a `Message` item.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
-#[derive(Debug, XmlSerialize)]
-#[xml_struct(text)]
-pub enum MessageDisposition {
-    SaveOnly,
-    SendOnly,
-    SendAndSaveCopy,
-}
 
 /// A request to create (and optionally send) one or more Exchange item(s).
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem>
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct CreateItem {
     /// The action the Exchange server will take upon creating this item.
@@ -35,7 +24,7 @@ pub struct CreateItem {
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
     #[xml_struct(attribute)]
-    pub message_disposition: MessageDisposition,
+    pub message_disposition: Option<MessageDisposition>,
 
     /// The folder in which to store an item once it has been created.
     ///
@@ -55,7 +44,7 @@ pub struct CreateItem {
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
 // N.B.: Commented-out variants are not yet implemented.
 #[non_exhaustive]
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
 pub enum Item {
     // Item(Item),
@@ -79,7 +68,7 @@ pub enum Item {
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>
 ///
 /// [`common::message`]: crate::Message
-#[derive(Debug, Default, XmlSerialize)]
+#[derive(Clone, Debug, Default, XmlSerialize)]
 pub struct Message {
     /// The MIME content of the item.
     #[xml_struct(ns_prefix = "t")]
@@ -107,7 +96,7 @@ pub struct Message {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedproperty>
 #[allow(non_snake_case)]
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 pub struct ExtendedProperty {
     #[xml_struct(ns_prefix = "t")]
     pub extended_field_URI: ExtendedFieldURI,
@@ -129,7 +118,7 @@ impl EnvelopeBodyContents for CreateItem {
 /// A response to a [`CreateItem`] request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitemresponse>
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct CreateItemResponse {
     pub response_messages: ResponseMessages,
@@ -143,13 +132,13 @@ impl EnvelopeBodyContents for CreateItemResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
     pub create_item_response_message: Vec<CreateItemResponseMessage>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct CreateItemResponseMessage {
     /// The status of the corresponding request, i.e. whether it succeeded or
