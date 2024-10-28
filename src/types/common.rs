@@ -467,8 +467,6 @@ impl XmlSerialize for DateTime {
     }
 }
 
-
-
 /// An email message.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>

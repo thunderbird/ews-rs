@@ -10,8 +10,6 @@ use crate::{
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-
-
 /// The method used by the Exchange server to resolve conflicts between item
 /// updates.
 ///
