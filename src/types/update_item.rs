@@ -11,6 +11,8 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 /// A request to update properties of one or more Exchange items.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem>
 #[derive(Clone, Debug, XmlSerialize)]
 pub struct UpdateItem {
     /// The action the Exchange server will take upon updating this item.
