@@ -177,6 +177,18 @@ pub enum DistinguishedPropertySet {
     UnifiedMessaging,
 }
 
+/// The action an Exchange server will take upon creating a `Message` item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
+/// and <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#messagedisposition-attribute>
+#[derive(Clone, Copy, Debug, XmlSerialize)]
+#[xml_struct(text)]
+pub enum MessageDisposition {
+    SaveOnly,
+    SendOnly,
+    SendAndSaveCopy,
+}
+
 /// The type of the value of a MAPI property.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#propertytype-attribute>
@@ -407,7 +419,7 @@ pub struct Items {
 /// Exchange item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
 pub enum RealItem {
     Message(Message),
 }
@@ -458,13 +470,14 @@ impl XmlSerialize for DateTime {
 /// An email message.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, XmlSerialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Message {
     /// The MIME content of the item.
     pub mime_content: Option<MimeContent>,
+
     /// The item's Exchange identifier.
-    pub item_id: ItemId,
+    pub item_id: Option<ItemId>,
 
     /// The identifier for the containing folder.
     ///
@@ -605,7 +618,7 @@ pub struct InternetMessageHeaders {
 /// A reference to a user or address which can send or receive mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
-#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.
