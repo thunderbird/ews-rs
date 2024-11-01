@@ -6,8 +6,8 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, BaseFolderId, ExtendedFieldURI, Items, MessageDisposition,
-    Operation, OperationResponse, RealItem, ResponseClass, ResponseCode, MESSAGES_NS_URI,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, Items, MessageDisposition, Operation,
+    OperationResponse, RealItem, ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
 /// A request to create (and optionally send) one or more Exchange items.
@@ -37,19 +37,6 @@ pub struct CreateItem {
 
     /// The item or items to create.
     pub items: Vec<RealItem>,
-}
-
-/// An extended MAPI property to set on the message.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedproperty>
-#[allow(non_snake_case)]
-#[derive(Clone, Debug, XmlSerialize)]
-pub struct ExtendedProperty {
-    #[xml_struct(ns_prefix = "t")]
-    pub extended_field_URI: ExtendedFieldURI,
-
-    #[xml_struct(ns_prefix = "t")]
-    pub value: String,
 }
 
 impl Operation for CreateItem {
