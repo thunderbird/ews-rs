@@ -131,7 +131,7 @@ pub enum PathToElement {
 // which follows the same structure. However, xml-struct doesn't currently
 // support using a nested structure to define an element's attributes, see
 // https://github.com/thunderbird/xml-struct-rs/issues/9
-#[derive(Clone, Debug, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
 pub struct ExtendedFieldURI {
     /// A well-known identifier for a property set.
     #[xml_struct(attribute)]
@@ -162,7 +162,7 @@ pub struct ExtendedFieldURI {
 /// A well-known MAPI property set identifier.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#distinguishedpropertysetid-attribute>
-#[derive(Clone, Copy, Debug, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
 #[xml_struct(text)]
 pub enum DistinguishedPropertySet {
     Address,
@@ -192,7 +192,7 @@ pub enum MessageDisposition {
 /// The type of the value of a MAPI property.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedfielduri#propertytype-attribute>
-#[derive(Clone, Copy, Debug, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
 #[xml_struct(text)]
 pub enum PropertyType {
     ApplicationTime,
@@ -503,6 +503,9 @@ pub struct Message {
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/categories-ex15websvcsotherref>
     pub categories: Option<Vec<StringElement>>,
+
+    // Extended MAPI properties to set on the message.
+    pub extended_property: Option<Vec<ExtendedProperty>>,
     pub importance: Option<Importance>,
     pub in_reply_to: Option<String>,
     pub is_submitted: Option<bool>,
@@ -539,6 +542,19 @@ pub struct Message {
     pub last_modified_time: Option<DateTime>,
     pub is_associated: Option<bool>,
     pub conversation_id: Option<ItemId>,
+}
+
+/// An extended MAPI property to set on the message.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedproperty>
+#[allow(non_snake_case)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+pub struct ExtendedProperty {
+    #[xml_struct(ns_prefix = "t")]
+    pub extended_field_URI: ExtendedFieldURI,
+
+    #[xml_struct(ns_prefix = "t")]
+    pub value: String,
 }
 
 /// A list of attachments.
@@ -618,7 +634,7 @@ pub struct InternetMessageHeaders {
 /// A reference to a user or address which can send or receive mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
-#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.
