@@ -72,6 +72,4 @@ pub struct DeleteFolderResponseMessage {
     pub response_code: Option<ResponseCode>,
 
     pub message_text: Option<String>,
-
-    pub folder_ids: Vec<BaseFolderId>,
 }
