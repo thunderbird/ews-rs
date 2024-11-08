@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
- use crate::types::common::{BaseItemId, Message, MessageDisposition, PathToElement};
- use crate::{
-     types::sealed::EnvelopeBodyContents, Items, Operation, OperationResponse, ResponseClass,
-     ResponseCode, MESSAGES_NS_URI,
- };
- use serde::Deserialize;
- use xml_struct::XmlSerialize;
+use crate::types::common::{BaseItemId, Message, MessageDisposition, PathToElement};
+use crate::{
+    types::sealed::EnvelopeBodyContents, Items, Operation, OperationResponse, ResponseClass,
+    ResponseCode, MESSAGES_NS_URI,
+};
+use serde::Deserialize;
+use xml_struct::XmlSerialize;
 
 /// A request to update properties of one or more Exchange items.
 ///
@@ -118,7 +118,7 @@ pub struct ItemChanges {
 
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
-pub enum ItemChange{
+pub enum ItemChange {
     ItemChange(ItemChangeInner),
 }
 
