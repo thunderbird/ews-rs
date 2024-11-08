@@ -6,7 +6,7 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::DeleteType, BaseFolderId, EnvelopeBodyContents, Operation, OperationResponse,
+    types::sealed::EnvelopeBodyContents, DeleteType, BaseFolderId, Operation, OperationResponse,
     ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
