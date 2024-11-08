@@ -772,7 +772,7 @@ pub struct FolderId {
 /// The element that determines how elements are deleted.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deletetype>
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(text)]
 pub enum DeleteType {
     HardDelete,
