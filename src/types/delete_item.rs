@@ -21,8 +21,7 @@ pub enum DeleteType {
     MoveToDeletedItems,
 }
 
-/// Describes whether to send meeting cancellations when deleting a calendar
-/// item.
+/// Whether to send meeting cancellations when deleting a calendar item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem#sendmeetingcancellations-attribute>
 #[derive(Debug, XmlSerialize)]
@@ -33,7 +32,7 @@ pub enum SendMeetingCancellations {
     SendToAllAndSaveCopy,
 }
 
-/// Describes which tasks should be impacted when deleting a task item.
+/// Which tasks should be impacted when deleting a task item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem#affectedtaskoccurrences-attribute>
 #[derive(Debug, XmlSerialize)]
@@ -57,7 +56,7 @@ pub struct DeleteItem {
 
     /// The action the EWS server will take when deleting a calendar item.
     ///
-    /// Required when deleting calendar items, optional otherwise.
+    /// Required when deleting calendar items, otherwise it has no effect.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem#sendmeetingcancellations-attribute>
     #[xml_struct(attribute)]
@@ -65,7 +64,7 @@ pub struct DeleteItem {
 
     /// The task item(s) to delete.
     ///
-    /// Required when deleting task items, optional otherwise.
+    /// Required when deleting task items, otherwise it has no effect.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem#affectedtaskoccurrences-attribute>
     #[xml_struct(attribute)]
