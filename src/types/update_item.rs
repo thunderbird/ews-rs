@@ -107,19 +107,10 @@ pub enum ConflictResolution {
     AlwaysOverwrite,
 }
 
-/// A list of updates to items, with each element representing a single item.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemchanges>
 #[derive(Clone, Debug, XmlSerialize)]
-pub struct ItemChanges {
+pub struct ItemChange {
     #[xml_struct(ns_prefix = "t")]
-    pub item_changes: Vec<ItemChange>,
-}
-
-#[derive(Clone, Debug, XmlSerialize)]
-#[xml_struct(variant_ns_prefix = "t")]
-pub enum ItemChange {
-    ItemChange(ItemChangeInner),
+    pub item_change: ItemChangeInner,
 }
 
 /// One or more updates to a single item.
