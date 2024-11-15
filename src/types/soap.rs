@@ -80,6 +80,14 @@ impl SoapHeader for RequestServerVersion {
     }
 }
 
+// Implement `SoapHeader` for `()` to represent an empty or no-op header
+impl SoapHeader for () {
+    fn serialize_header(&self, _writer: &mut Writer<Vec<u8>>) -> Result<(), Error> {
+        // No-op for empty header
+        Ok(())
+    }
+}
+
 /// A SOAP envelope containing the body of an EWS operation or response.
 ///
 /// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383494>
