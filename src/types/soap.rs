@@ -15,22 +15,90 @@ use crate::{
 mod de;
 use self::de::DeserializeEnvelope;
 
+/// A SOAP header of an EWS operation or response. Headers are optional and may
+/// contain additional information about the operation or response.
+///
+/// In some operations that are only supported in later versions of Exchange,
+/// the `RequestServerVersion` header is required to indicate the version of the
+/// server to which the request is directed.
+///
+/// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383497>
+#[derive(Clone, Debug)]
+pub enum SoapHeaderTypes {
+    RequestServerVersion(RequestServerVersion),
+}
+
+/// A SOAP header indicating the version of the Exchange server to which a
+/// request is directed.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/requestserverversion>
+#[derive(Clone, Debug)]
+pub struct RequestServerVersion {
+    pub version: RequestServerVersionVersion,
+}
+
+/// The version of the Exchange server to which a request is directed.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/requestserverversion#version-attribute-values>
+#[derive(Clone, Debug)]
+pub enum RequestServerVersionVersion {
+    Exchange2007,
+    Exchange2007Sp1,
+    Exchange2010,
+    Exchange2010Sp1,
+    Exchange2010Sp2,
+    Exchange2013,
+    Exchange2013Sp1,
+}
+
+impl RequestServerVersionVersion {
+    fn as_str(&self) -> &'static str {
+        match self {
+            RequestServerVersionVersion::Exchange2007 => "Exchange2007",
+            RequestServerVersionVersion::Exchange2007Sp1 => "Exchange2007_SP1",
+            RequestServerVersionVersion::Exchange2010 => "Exchange2010",
+            RequestServerVersionVersion::Exchange2010Sp1 => "Exchange2010_SP1",
+            RequestServerVersionVersion::Exchange2010Sp2 => "Exchange2010_SP2",
+            RequestServerVersionVersion::Exchange2013 => "Exchange2013",
+            RequestServerVersionVersion::Exchange2013Sp1 => "Exchange2013_SP1",
+        }
+    }
+}
+
+pub trait SoapHeader {
+    fn serialize_header(&self, writer: &mut Writer<Vec<u8>>) -> Result<(), Error>;
+}
+
+impl SoapHeader for RequestServerVersion {
+    fn serialize_header(&self, writer: &mut Writer<Vec<u8>>) -> Result<(), Error> {
+        writer.write_event(Event::Start(
+            BytesStart::new("t:RequestServerVersion")
+                .with_attributes([("Version", self.version.as_str())]),
+        ))?;
+        writer.write_event(Event::End(BytesEnd::new("t:RequestServerVersion")))?;
+        Ok(())
+    }
+}
+
 /// A SOAP envelope containing the body of an EWS operation or response.
 ///
 /// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383494>
 #[derive(Clone, Debug)]
-pub struct Envelope<B> {
+pub struct Envelope<B, H> {
     pub body: B,
+    pub header: Option<H>,
 }
 
-impl<B> Envelope<B>
+impl<B, H> Envelope<B, H>
 where
     B: Operation,
+    H: SoapHeader,
 {
     /// Serializes the SOAP envelope as a complete XML document.
     pub fn as_xml_document(&self) -> Result<Vec<u8>, Error> {
         const SOAP_ENVELOPE: &str = "soap:Envelope";
         const SOAP_BODY: &str = "soap:Body";
+        const SOAP_HEADER: &str = "soap:Header";
 
         let mut writer = {
             let inner: Vec<u8> = Default::default();
@@ -46,12 +114,22 @@ where
             BytesStart::new(SOAP_ENVELOPE)
                 .with_attributes([("xmlns:soap", SOAP_NS_URI), ("xmlns:t", TYPES_NS_URI)]),
         ))?;
+
+        // Conditionally add Header if present
+        if let Some(header) = &self.header {
+            writer.write_event(Event::Start(BytesStart::new(SOAP_HEADER)))?;
+            header.serialize_header(&mut writer)?;
+            writer.write_event(Event::End(BytesEnd::new(SOAP_HEADER)))?;
+        }
+
+        // Start Body
         writer.write_event(Event::Start(BytesStart::new(SOAP_BODY)))?;
 
         // Write the operation itself.
         self.body
             .serialize_as_element(&mut writer, <B as sealed::EnvelopeBodyContents>::name())?;
 
+        // End Body and Envelope
         writer.write_event(Event::End(BytesEnd::new(SOAP_BODY)))?;
         writer.write_event(Event::End(BytesEnd::new(SOAP_ENVELOPE)))?;
 
@@ -59,7 +137,7 @@ where
     }
 }
 
-impl<B> Envelope<B>
+impl<B, H> Envelope<B, H>
 where
     B: OperationResponse,
 {
@@ -89,6 +167,7 @@ where
 
         Ok(Envelope {
             body: envelope.body,
+            header: None,
         })
     }
 }
@@ -422,7 +501,7 @@ mod tests {
         // test the generic behavior of the interface.
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><foo:Foo><text>testing content</text><other_field/></foo:Foo></s:Body></s:Envelope>"#;
 
-        let actual: Envelope<SomeStruct> =
+        let actual: Envelope<SomeStruct, Option<()>> =
             Envelope::from_xml_document(xml.as_bytes()).expect("deserialization should succeed");
 
         assert_eq!(
@@ -448,7 +527,7 @@ mod tests {
         // This XML is drawn from testing data for `evolution-ews`.
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultcode xmlns:a="http://schemas.microsoft.com/exchange/services/2006/types">a:ErrorSchemaValidation</faultcode><faultstring xml:lang="en-US">The request failed schema validation: The 'Id' attribute is invalid - The value 'invalidparentid' is invalid according to its datatype 'http://schemas.microsoft.com/exchange/services/2006/types:DistinguishedFolderIdNameType' - The Enumeration constraint failed.</faultstring><detail><e:ResponseCode xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">ErrorSchemaValidation</e:ResponseCode><e:Message xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">The request failed schema validation.</e:Message><t:MessageXml xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"><t:LineNumber>2</t:LineNumber><t:LinePosition>630</t:LinePosition><t:Violation>The 'Id' attribute is invalid - The value 'invalidparentid' is invalid according to its datatype 'http://schemas.microsoft.com/exchange/services/2006/types:DistinguishedFolderIdNameType' - The Enumeration constraint failed.</t:Violation></t:MessageXml></detail></s:Fault></s:Body></s:Envelope>"#;
 
-        let err = <Envelope<Foo>>::from_xml_document(xml.as_bytes())
+        let err = <Envelope<Foo, Option<()>>>::from_xml_document(xml.as_bytes())
             .expect_err("should return error when body contains fault");
 
         if let Error::RequestFault(fault) = err {
@@ -503,7 +582,7 @@ mod tests {
         // real-life examples.
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultcode xmlns:a="http://schemas.microsoft.com/exchange/services/2006/types">a:ErrorServerBusy</faultcode><faultstring xml:lang="en-US">I made this up because I don't have real testing data. 🙃</faultstring><detail><e:ResponseCode xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">ErrorServerBusy</e:ResponseCode><e:Message xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">Who really knows?</e:Message><t:MessageXml xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"><t:Value Name="BackOffMilliseconds">25</t:Value></t:MessageXml></detail></s:Fault></s:Body></s:Envelope>"#;
 
-        let err = <Envelope<Foo>>::from_xml_document(xml.as_bytes())
+        let err = <Envelope<Foo, Option<()>>>::from_xml_document(xml.as_bytes())
             .expect_err("should return error when body contains fault");
 
         // The testing here isn't as thorough as the invalid schema test due to
