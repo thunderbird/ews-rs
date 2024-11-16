@@ -1,5 +1,7 @@
 use crate::types::sealed::EnvelopeBodyContents;
-use crate::{BaseItemId, Operation, OperationResponse, MESSAGES_NS_URI};
+use crate::{
+    BaseItemId, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
+};
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
@@ -40,8 +42,10 @@ pub struct ItemIds {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
+#[serde(rename = "m:MarkAsJunkResponse")]
 pub struct MarkAsJunkResponse {
-    // Add fields as needed to match the structure of the response from EWS.
+    #[serde(rename = "m:ResponseMessages")]
+    pub response_messages: ResponseMessages,
 }
 
 impl OperationResponse for MarkAsJunkResponse {}
@@ -50,4 +54,35 @@ impl EnvelopeBodyContents for MarkAsJunkResponse {
     fn name() -> &'static str {
         "MarkAsJunkResponse"
     }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct ResponseMessages {
+    #[serde(rename = "m:MarkAsJunkResponseMessage")]
+    pub mark_as_junk_response_message: Vec<MarkAsJunkResponseMessage>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct MarkAsJunkResponseMessage {
+    /// The status of the corresponding request, i.e. whether it succeeded or
+    /// resulted in an error.
+    #[serde(rename = "@ResponseClass")]
+    pub response_class: ResponseClass,
+
+    pub response_code: Option<ResponseCode>,
+
+    pub moved_item_id: Option<MovedItemId>, // Optional in case it’s not present
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+#[serde(rename = "t:MovedItemId")]
+pub struct MovedItemId {
+    #[serde(rename = "@Id")]
+    pub id: String,
+
+    #[serde(rename = "@ChangeKey")]
+    pub change_key: String,
 }
