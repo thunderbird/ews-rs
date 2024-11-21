@@ -11,6 +11,7 @@ pub mod soap;
 
 pub mod create_folder;
 pub mod create_item;
+pub mod delete_item;
 pub mod get_folder;
 pub mod get_item;
 pub mod sync_folder_hierarchy;
