@@ -253,9 +253,11 @@ pub enum ResponseClass {
 /// any.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/responsecode>
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
 pub enum ResponseCode {
+    #[default]
     NoError,
+
     ErrorAccessDenied,
     ErrorAccessModeSpecified,
     ErrorAccountDisabled,
