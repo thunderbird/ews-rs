@@ -803,19 +803,20 @@ pub struct ItemId {
 }
 
 /// The representation of a folder in an EWS operation.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
 pub enum Folder {
     /// A calendar folder in a mailbox.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/calendarfolder>
     #[serde(rename_all = "PascalCase")]
     CalendarFolder {
-        folder_id: FolderId,
+        folder_id: Option<FolderId>,
         parent_folder_id: Option<FolderId>,
         folder_class: Option<String>,
         display_name: Option<String>,
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
+        extended_property: Option<Vec<ExtendedProperty>>,
     },
 
     /// A contacts folder in a mailbox.
@@ -823,12 +824,13 @@ pub enum Folder {
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contactsfolder>
     #[serde(rename_all = "PascalCase")]
     ContactsFolder {
-        folder_id: FolderId,
+        folder_id: Option<FolderId>,
         parent_folder_id: Option<FolderId>,
         folder_class: Option<String>,
         display_name: Option<String>,
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
+        extended_property: Option<Vec<ExtendedProperty>>,
     },
 
     /// A folder in a mailbox.
@@ -836,12 +838,13 @@ pub enum Folder {
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folder>
     #[serde(rename_all = "PascalCase")]
     Folder {
-        folder_id: FolderId,
+        folder_id: Option<FolderId>,
         parent_folder_id: Option<FolderId>,
         folder_class: Option<String>,
         display_name: Option<String>,
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
+        extended_property: Option<Vec<ExtendedProperty>>,
         unread_count: Option<u32>,
     },
 
@@ -850,12 +853,13 @@ pub enum Folder {
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/searchfolder>
     #[serde(rename_all = "PascalCase")]
     SearchFolder {
-        folder_id: FolderId,
+        folder_id: Option<FolderId>,
         parent_folder_id: Option<FolderId>,
         folder_class: Option<String>,
         display_name: Option<String>,
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
+        extended_property: Option<Vec<ExtendedProperty>>,
     },
 
     /// A task folder in a mailbox.
@@ -863,12 +867,13 @@ pub enum Folder {
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/tasksfolder>
     #[serde(rename_all = "PascalCase")]
     TasksFolder {
-        folder_id: FolderId,
+        folder_id: Option<FolderId>,
         parent_folder_id: Option<FolderId>,
         folder_class: Option<String>,
         display_name: Option<String>,
         total_count: Option<u32>,
         child_folder_count: Option<u32>,
+        extended_property: Option<Vec<ExtendedProperty>>,
     },
 }
 
@@ -985,7 +990,7 @@ pub struct Message {
     #[xml_struct(ns_prefix = "t")]
     pub categories: Option<Vec<StringElement>>,
 
-    // Extended MAPI properties to set on the message.
+    // Extended MAPI properties of the message.
     #[xml_struct(ns_prefix = "t")]
     pub extended_property: Option<Vec<ExtendedProperty>>,
 
@@ -1098,7 +1103,7 @@ pub struct Message {
     pub conversation_id: Option<ItemId>,
 }
 
-/// An extended MAPI property to set on the message.
+/// An extended MAPI property of an Exchange item or folder.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedproperty>
 #[allow(non_snake_case)]
