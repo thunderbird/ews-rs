@@ -5,7 +5,7 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::types::sealed::EnvelopeBodyContents;
+use crate::{types::sealed::EnvelopeBodyContents, DeleteType};
 use crate::{
     BaseItemId, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
