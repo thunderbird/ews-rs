@@ -7,9 +7,9 @@ use xml_struct::XmlSerialize;
 
 use crate::types::sealed::EnvelopeBodyContents;
 use crate::{
-    BaseItemId, DeleteType, Operation, OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
+    BaseItemId, DeleteType, Operation, OperationResponse, ResponseClass, ResponseCode,
+    MESSAGES_NS_URI,
 };
-
 
 /// Whether to send meeting cancellations when deleting a calendar item.
 ///
