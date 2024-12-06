@@ -22,7 +22,7 @@ pub struct DeleteFolder {
     #[xml_struct(attribute)]
     pub delete_type: DeleteType,
 
-    /// DeleteFolder requires FolderIds which is an array of FolderId and DistinguishedFolderId elements
+    /// A list of folders to delete.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderids>
     pub folder_ids: Vec<BaseFolderId>,
