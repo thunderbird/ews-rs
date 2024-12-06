@@ -769,6 +769,17 @@ pub struct FolderId {
     pub change_key: Option<String>,
 }
 
+/// The manner in which items or folders are deleted.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deletetype>
+#[derive(Clone, Debug, XmlSerialize)]
+#[xml_struct(text)]
+pub enum DeleteType {
+    HardDelete,
+    MoveToDeletedItems,
+    SoftDelete,
+}
+
 /// An identifier for an Exchange item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids>
