@@ -18,7 +18,7 @@ use crate::{
 pub struct DeleteFolder {
     /// The method the EWS server will use to perform the deletion.
     ///
-    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem#deletetype-attribute>
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deletefolder#deletetype-attribute>
     #[xml_struct(attribute)]
     pub delete_type: DeleteType,
 
