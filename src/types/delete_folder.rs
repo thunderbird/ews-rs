@@ -16,7 +16,7 @@ use crate::{
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct DeleteFolder {
-    /// DeleteFolder uses the DeleteType attribute
+    /// The method the EWS server will use to perform the deletion.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deleteitem#deletetype-attribute>
     #[xml_struct(attribute)]
