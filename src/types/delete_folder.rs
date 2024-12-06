@@ -10,7 +10,7 @@ use crate::{
     ResponseClass, ResponseCode, MESSAGES_NS_URI,
 };
 
-/// A request to delete a folder.
+/// A request to delete one or more folders.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deletefolder>
 #[derive(Clone, Debug, XmlSerialize)]
