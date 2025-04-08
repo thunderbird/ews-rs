@@ -6,20 +6,51 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, BaseFolderId, DeleteType, Operation, OperationResponse,
-    ResponseClass, ResponseCode, MESSAGES_NS_URI,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, Operation, OperationResponse, ResponseClass,
+    ResponseCode, MESSAGES_NS_URI,
 };
 
-/// A request to rename an existing folder.
+/// The unique identifier of an update to be performed on a folder.
 ///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updatefolder-operation>
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>
+#[derive(Clone, Debug, XmlSerialize)]
+#[xml_struct(text)]
+pub enum Updates {
+    /// Not implemented in EWS API, but stll an option
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appendtofolderfield>
+    AppendToFolderField,
+
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setfolderfield>
+    SetFolderField,
+
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deletefolderfield>
+    DeleteFolderField,
+}
+
+/// A collection of changes to be performed on a folder.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderchange>.
+#[derive(Clone, Debug, XmlSerialize)]
+#[xml_struct(default_ns = MESSAGES_NS_URI)]
+pub struct FolderChange {
+    /// The folder to be updated.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderid>.
+    pub folder_id: BaseFolderId,
+
+    /// The update to be performed on the folder.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>.
+    pub folder_update: Updates,
+}
+
+/// An operation to update a given property of a specified folder.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updatefolder>.
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct UpdateFolder {
-    /// The folder to rename.
-    ///
-    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderid>
-    pub folder_id: BaseFolderId,
+    pub folder_changes: Vec<FolderChange>,
 }
 
 impl Operation for UpdateFolder {
