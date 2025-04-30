@@ -15,7 +15,7 @@ use crate::{
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(text)]
-pub enum Updates {
+pub enum Update {
     /// Not implemented in EWS API, but stll an option
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appendtofolderfield>
     AppendToFolderField,
@@ -41,7 +41,7 @@ pub struct FolderChange {
     /// The update to be performed on the folder.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>.
-    pub folder_update: Updates,
+    pub folder_update: Update,
 }
 
 /// An operation to update a given property of a specified folder.
