@@ -13,9 +13,9 @@ use crate::{
 /// The unique identifier of an update to be performed on a folder.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>
-#[derive(Clone, Debug, XmlSerialize)]
+#[derive(Debug, XmlSerialize)]
 #[xml_struct(text)]
-pub enum Update {
+pub enum Updates {
     /// Not implemented in EWS API, but stll an option
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appendtofolderfield>
     AppendToFolderField,
@@ -27,34 +27,34 @@ pub enum Update {
     DeleteFolderField,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, XmlSerialize)]
 pub struct FolderChanges {
-    #[serde(default, rename = "$value")]
-    pub inner: Vec<FolderChange>,
+    //#[xml_struct(flatten)]
+    pub folder_change: Vec<FolderChange>,
 }
 
 /// A collection of changes to be performed on a folder.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderchange>.
-//#[derive(Clone, Debug, XmlSerialize)]
-//#[xml_struct(default_ns = MESSAGES_NS_URI)]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, XmlSerialize)]
+#[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct FolderChange {
     /// The folder to be updated.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderid>.
+    #[xml_struct(flatten)]
     pub folder_id: BaseFolderId,
 
     /// The update to be performed on the folder.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>.
-    pub folder_update: Update,
+    pub updates: Updates,
 }
 
 /// An operation to update a given property of a specified folder.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updatefolder>.
-#[derive(Clone, Debug, XmlSerialize)]
+#[derive(Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct UpdateFolder {
     pub folder_changes: FolderChanges,
@@ -73,7 +73,7 @@ impl EnvelopeBodyContents for UpdateFolder {
 /// A response to a [`UpdateFolder`] request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updatefolderresponsemessage>
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct UpdateFolderResponse {
     pub response_messages: ResponseMessages,
@@ -87,13 +87,13 @@ impl EnvelopeBodyContents for UpdateFolderResponse {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
     pub update_folder_response_message: Vec<UpdateFolderResponseMessage>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct UpdateFolderResponseMessage {
     /// The status of the corresponding request, i.e. whether it succeeded or
@@ -104,4 +104,41 @@ pub struct UpdateFolderResponseMessage {
     pub response_code: Option<ResponseCode>,
 
     pub message_text: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::BaseFolderId;
+    use crate::Error;
+    use quick_xml::Writer;
+
+    #[test]
+    fn test_serialization() {
+        let folder_changes = FolderChanges {
+            folder_change: vec![FolderChange {
+                folder_id: BaseFolderId::FolderId {
+                    id: "123".to_string(),
+                    change_key: None,
+                },
+                updates: Updates::SetFolderField,
+            }],
+        };
+        // Serialize into XML.
+        let mut writer = {
+            let inner: Vec<u8> = Default::default();
+            Writer::new(inner)
+        };
+        folder_changes
+            .serialize_as_element(&mut writer, "FolderChanges")
+            .unwrap();
+
+        // Read the contents of the `Writer`'s buffer.
+        let buf = writer.into_inner();
+        let actual = std::str::from_utf8(buf.as_slice())
+            .map_err(|e| Error::UnexpectedResponse(e.to_string().into_bytes()))
+            .unwrap();
+
+        println!("{}", actual);
+    }
 }
