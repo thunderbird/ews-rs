@@ -12,18 +12,29 @@ use crate::{
 
 use super::Folder;
 
+#[derive(Debug, XmlSerialize)]
+#[allow(non_snake_case)]
+pub struct FieldURI {
+    #[xml_struct(attribute)]
+    pub field_URI: String,
+}
+
 /// The unique identifier of an update to be performed on a folder.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>
 #[derive(Debug, XmlSerialize)]
+#[xml_struct(variant_ns_prefix = "t")]
 pub enum Updates {
     /// Not implemented in EWS API, but stll an option
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appendtofolderfield>
     AppendToFolderField,
 
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setfolderfield>
+    #[allow(non_snake_case)]
     SetFolderField {
-        field_uri: String,
+        #[xml_struct(ns_prefix = "t")]
+        field_URI: FieldURI,
+        #[xml_struct(ns_prefix = "t", flatten)]
         folder: Folder,
     },
 
@@ -33,6 +44,7 @@ pub enum Updates {
 
 #[derive(Debug, XmlSerialize)]
 pub struct FolderChanges {
+    #[xml_struct(ns_prefix = "t")]
     pub folder_change: FolderChange,
 }
 
@@ -40,17 +52,17 @@ pub struct FolderChanges {
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderchange>.
 #[derive(Debug, XmlSerialize)]
-#[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct FolderChange {
     /// The folder to be updated.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderid>.
-    #[xml_struct(flatten)]
+    #[xml_struct(flatten, ns_prefix = "t")]
     pub folder_id: BaseFolderId,
 
     /// The update to be performed on the folder.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>.
+    #[xml_struct(ns_prefix = "t")]
     pub updates: Updates,
 }
 
@@ -117,25 +129,29 @@ mod tests {
     use quick_xml::Writer;
 
     #[test]
-    fn test_serialization() {
-        let folder_changes = FolderChanges {
-            folder_change: FolderChange {
-                folder_id: BaseFolderId::FolderId {
-                    id: "123".to_string(),
-                    change_key: None,
-                },
-                updates: Updates::SetFolderField {
-                    field_uri: "folder:DisplayName".to_string(),
-                    folder: Folder::Folder {
-                        display_name: Some("NewName".to_string()),
-                        folder_id: None,
-                        parent_folder_id: None,
-                        folder_class: None,
-                        total_count: None,
-                        child_folder_count: None,
-                        extended_property: None,
-                        unread_count: None,
-                    }
+    fn serialize_update_request() {
+        let update_folder = UpdateFolder {
+            folder_changes: FolderChanges {
+                folder_change: FolderChange {
+                    folder_id: BaseFolderId::FolderId {
+                        id: "AScA".to_string(),
+                        change_key: Some("GO3u/".to_string()),
+                    },
+                    updates: Updates::SetFolderField {
+                        field_URI: FieldURI {
+                            field_URI: "folder:DisplayName".to_string(),
+                        },
+                        folder: Folder::Folder {
+                            display_name: Some("NewFolderName".to_string()),
+                            folder_id: None,
+                            parent_folder_id: None,
+                            folder_class: None,
+                            total_count: None,
+                            child_folder_count: None,
+                            extended_property: None,
+                            unread_count: None,
+                        },
+                    },
                 },
             },
         };
@@ -144,8 +160,8 @@ mod tests {
             let inner: Vec<u8> = Default::default();
             Writer::new(inner)
         };
-        folder_changes
-            .serialize_as_element(&mut writer, "FolderChanges")
+        update_folder
+            .serialize_as_element(&mut writer, "UpdateFolder")
             .unwrap();
 
         // Read the contents of the `Writer`'s buffer.
@@ -154,6 +170,9 @@ mod tests {
             .map_err(|e| Error::UnexpectedResponse(e.to_string().into_bytes()))
             .unwrap();
 
-        println!("{}", actual);
+        let expected = r#"<UpdateFolder xmlns="http://schemas.microsoft.com/exchange/services/2006/messages"><FolderChanges><t:FolderChange><t:FolderId Id="AScA" ChangeKey="GO3u/"/><t:Updates><t:SetFolderField><t:FieldURI FieldURI="folder:DisplayName"/><t:Folder><t:DisplayName>NewFolderName</t:DisplayName></t:Folder></t:SetFolderField></t:Updates></t:FolderChange></FolderChanges></UpdateFolder>"#;
+
+        // println!("{}", actual);
+        assert_eq!(actual, expected);
     }
 }
