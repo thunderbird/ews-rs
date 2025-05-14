@@ -10,18 +10,22 @@ use crate::{
     ResponseCode, MESSAGES_NS_URI,
 };
 
+use super::Folder;
+
 /// The unique identifier of an update to be performed on a folder.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>
 #[derive(Debug, XmlSerialize)]
-#[xml_struct(text)]
 pub enum Updates {
     /// Not implemented in EWS API, but stll an option
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appendtofolderfield>
     AppendToFolderField,
 
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setfolderfield>
-    SetFolderField,
+    SetFolderField {
+        field_uri: String,
+        folder: Folder,
+    },
 
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deletefolderfield>
     DeleteFolderField,
@@ -29,8 +33,7 @@ pub enum Updates {
 
 #[derive(Debug, XmlSerialize)]
 pub struct FolderChanges {
-    //#[xml_struct(flatten)]
-    pub folder_change: Vec<FolderChange>,
+    pub folder_change: FolderChange,
 }
 
 /// A collection of changes to be performed on a folder.
@@ -116,13 +119,25 @@ mod tests {
     #[test]
     fn test_serialization() {
         let folder_changes = FolderChanges {
-            folder_change: vec![FolderChange {
+            folder_change: FolderChange {
                 folder_id: BaseFolderId::FolderId {
                     id: "123".to_string(),
                     change_key: None,
                 },
-                updates: Updates::SetFolderField,
-            }],
+                updates: Updates::SetFolderField {
+                    field_uri: "folder:DisplayName".to_string(),
+                    folder: Folder::Folder {
+                        display_name: Some("NewName".to_string()),
+                        folder_id: None,
+                        parent_folder_id: None,
+                        folder_class: None,
+                        total_count: None,
+                        child_folder_count: None,
+                        extended_property: None,
+                        unread_count: None,
+                    }
+                },
+            },
         };
         // Serialize into XML.
         let mut writer = {
