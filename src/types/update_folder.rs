@@ -10,7 +10,7 @@ use crate::{
     ResponseCode, MESSAGES_NS_URI,
 };
 
-use super::Folder;
+use super::{Folder, Folders};
 
 #[derive(Debug, XmlSerialize)]
 #[allow(non_snake_case)]
@@ -88,7 +88,7 @@ impl EnvelopeBodyContents for UpdateFolder {
 /// A response to a [`UpdateFolder`] request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updatefolderresponsemessage>
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct UpdateFolderResponse {
     pub response_messages: ResponseMessages,
@@ -102,23 +102,22 @@ impl EnvelopeBodyContents for UpdateFolderResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
     pub update_folder_response_message: Vec<UpdateFolderResponseMessage>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub struct UpdateFolderResponseMessage {
     /// The status of the corresponding request, i.e. whether it succeeded or
     /// resulted in an error.
     #[serde(rename = "@ResponseClass")]
     pub response_class: ResponseClass,
-
     pub response_code: Option<ResponseCode>,
-
     pub message_text: Option<String>,
+    pub folders: Folders,
 }
 
 #[cfg(test)]
@@ -126,6 +125,8 @@ mod tests {
     use super::*;
     use crate::BaseFolderId;
     use crate::Error;
+    use crate::FolderId;
+    use quick_xml::de::Deserializer;
     use quick_xml::Writer;
 
     #[test]
@@ -174,5 +175,54 @@ mod tests {
 
         // println!("{}", actual);
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn deserialize_update_response() {
+        let content = r#"<UpdateFolderResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"
+                          xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"
+                          xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
+                <m:ResponseMessages>
+                    <m:UpdateFolderResponseMessage ResponseClass="Success">
+                    <m:ResponseCode>NoError</m:ResponseCode>
+                    <m:Folders>
+                        <t:Folder>
+                        <t:FolderId Id="AAAlAFVz" ChangeKey="AQAAAB" />
+                        </t:Folder>
+                    </m:Folders>
+                    </m:UpdateFolderResponseMessage>
+                </m:ResponseMessages>
+            </UpdateFolderResponse>"#;
+
+        let mut deserializer = Deserializer::from_reader(content.as_bytes());
+        let response: UpdateFolderResponse =
+            serde_path_to_error::deserialize(&mut deserializer).unwrap();
+
+        let expected = UpdateFolderResponse {
+            response_messages: ResponseMessages {
+                update_folder_response_message: vec![UpdateFolderResponseMessage {
+                    response_class: ResponseClass::Success,
+                    response_code: Some(ResponseCode::NoError),
+                    message_text: None,
+                    folders: Folders {
+                        inner: vec![Folder::Folder {
+                            folder_id: Some(FolderId {
+                                id: "AAAlAFVz".to_string(),
+                                change_key: Some("AQAAAB".to_string()),
+                            }),
+                            parent_folder_id: None,
+                            folder_class: None,
+                            display_name: None,
+                            total_count: None,
+                            child_folder_count: None,
+                            extended_property: None,
+                            unread_count: None,
+                        }],
+                    },
+                }],
+            },
+        };
+
+        assert_eq!(response, expected);
     }
 }
