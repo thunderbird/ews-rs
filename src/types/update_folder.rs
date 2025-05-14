@@ -27,11 +27,18 @@ pub enum Update {
     DeleteFolderField,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct FolderChanges {
+    #[serde(default, rename = "$value")]
+    pub inner: Vec<FolderChange>,
+}
+
 /// A collection of changes to be performed on a folder.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderchange>.
-#[derive(Clone, Debug, XmlSerialize)]
-#[xml_struct(default_ns = MESSAGES_NS_URI)]
+//#[derive(Clone, Debug, XmlSerialize)]
+//#[xml_struct(default_ns = MESSAGES_NS_URI)]
+#[derive(Debug, Deserialize)]
 pub struct FolderChange {
     /// The folder to be updated.
     ///
@@ -50,7 +57,7 @@ pub struct FolderChange {
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct UpdateFolder {
-    pub folder_changes: Vec<FolderChange>,
+    pub folder_changes: FolderChanges,
 }
 
 impl Operation for UpdateFolder {
