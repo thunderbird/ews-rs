@@ -152,6 +152,7 @@ mod tests {
                 },
             },
         };
+
         // Serialize into XML.
         let mut writer = {
             let inner: Vec<u8> = Default::default();
