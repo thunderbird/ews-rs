@@ -25,7 +25,7 @@ pub struct FieldURI {
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
 pub enum Updates {
-    /// Not implemented in EWS API, but stll an option
+    /// Not implemented in EWS (as per the documentation page for this element), but still an option
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appendtofolderfield>
     AppendToFolderField,
 
