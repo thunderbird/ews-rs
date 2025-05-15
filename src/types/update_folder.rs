@@ -32,7 +32,10 @@ pub enum Updates {
     },
 
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/deletefolderfield>
-    DeleteFolderField,
+    DeleteFolderField {
+        #[xml_struct(flatten, ns_prefix = "t")]
+        field_URI: PathToElement,
+    },
 }
 
 #[derive(Debug, XmlSerialize)]
