@@ -10,14 +10,7 @@ use crate::{
     ResponseCode, MESSAGES_NS_URI,
 };
 
-use super::{Folder, Folders};
-
-#[derive(Debug, XmlSerialize)]
-#[allow(non_snake_case)]
-pub struct FieldURI {
-    #[xml_struct(attribute)]
-    pub field_URI: String,
-}
+use super::{Folder, Folders, PathToElement};
 
 /// The unique identifier of an update to be performed on a folder.
 ///
@@ -32,8 +25,8 @@ pub enum Updates {
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/setfolderfield>
     #[allow(non_snake_case)]
     SetFolderField {
-        #[xml_struct(ns_prefix = "t")]
-        field_URI: FieldURI,
+        #[xml_struct(ns_prefix = "t", flatten)]
+        field_URI: PathToElement,
         #[xml_struct(ns_prefix = "t", flatten)]
         folder: Folder,
     },
@@ -139,7 +132,7 @@ mod tests {
                         change_key: Some("GO3u/".to_string()),
                     },
                     updates: Updates::SetFolderField {
-                        field_URI: FieldURI {
+                        field_URI: PathToElement::FieldURI {
                             field_URI: "folder:DisplayName".to_string(),
                         },
                         folder: Folder::Folder {
