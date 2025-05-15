@@ -173,7 +173,6 @@ mod tests {
 
         let expected = r#"<UpdateFolder xmlns="http://schemas.microsoft.com/exchange/services/2006/messages"><FolderChanges><t:FolderChange><t:FolderId Id="AScA" ChangeKey="GO3u/"/><t:Updates><t:SetFolderField><t:FieldURI FieldURI="folder:DisplayName"/><t:Folder><t:DisplayName>NewFolderName</t:DisplayName></t:Folder></t:SetFolderField></t:Updates></t:FolderChange></FolderChanges></UpdateFolder>"#;
 
-        // println!("{}", actual);
         assert_eq!(actual, expected);
     }
 
