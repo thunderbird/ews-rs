@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use super::{BaseFolderId, BaseItemId, MESSAGES_NS_URI};
+use super::{common_response::ItemResponseMessage, sealed::EnvelopeBodyContents, BaseFolderId, BaseItemId, Operation, OperationResponse, MESSAGES_NS_URI};
 
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
@@ -13,11 +14,43 @@ pub struct MoveItem {
     pub item_ids: Vec<BaseItemId>,
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct MoveItemResponse {
+    pub response_messages: MoveItemResponseMessages,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct MoveItemResponseMessages {
+    pub move_item_response_message: Vec<ItemResponseMessage>,
+}
+
+impl Operation for MoveItem {
+    type Response = MoveItemResponse;
+}
+
+impl EnvelopeBodyContents for MoveItem {
+    fn name() -> &'static str {
+        "MoveItem"
+    }
+}
+
+impl OperationResponse for MoveItemResponse {}
+
+impl EnvelopeBodyContents for MoveItemResponse {
+    fn name() -> &'static str {
+        "MoveItemResponse"
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::{test_support::assert_serialized_content, BaseFolderId, BaseItemId};
+    use crate::{
+        test_support::{assert_deserialized_content, assert_serialized_content}, types::common_response::ItemResponseMessage, BaseFolderId, BaseItemId, ItemId, Items, Message, RealItem, ResponseCode
+    };
 
-    use super::MoveItem;
+    use super::{MoveItem, MoveItemResponse, MoveItemResponseMessages};
 
     #[test]
     fn test_serialize_move_item() {
@@ -35,5 +68,44 @@ mod test {
         let expected = r#"<MoveItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages"><ToFolderId><t:DistinguishedFolderId Id="drafts"/></ToFolderId><ItemIds><t:ItemId Id="AAAtAEF/swbAAA=" ChangeKey="EwAAABYA/s4b"/></ItemIds></MoveItem>"#;
 
         assert_serialized_content(&move_item, "MoveItem", expected);
+    }
+
+    #[test]
+    fn test_deserialize_move_item_response() {
+        let content = r#"<MoveItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"
+                    xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"
+                    xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
+                    <m:ResponseMessages>
+                    <m:MoveItemResponseMessage ResponseClass="Success">
+                    <m:ResponseCode>NoError</m:ResponseCode>
+                    <m:Items>
+                        <t:Message>
+                        <t:ItemID Id="AAMkAd" ChangeKey="FwAAABY" />
+                        </t:Message>
+                    </m:Items>
+                    </m:MoveItemResponseMessage>
+                </m:ResponseMessages>
+            </MoveItemResponse>"#;
+
+        let response = MoveItemResponse {
+            response_messages: MoveItemResponseMessages {
+                move_item_response_message: vec![ItemResponseMessage {
+                    response_class: crate::ResponseClass::Success,
+                    response_code: Some(ResponseCode::NoError),
+                    message_text: None,
+                    items: Items {
+                        inner: vec![RealItem::Message(Message {
+                            item_id: Some(ItemId{
+                                id: "AAMkAd".to_string(),
+                                change_key: Some("FwAAABY".to_string()),
+                            }),
+                            ..Default::default()
+                        })],
+                    },
+                }],
+            },
+        };
+
+        assert_deserialized_content(content, response);
     }
 }

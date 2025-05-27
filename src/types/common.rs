@@ -802,7 +802,7 @@ pub enum BaseItemId {
 /// The unique identifier of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemid>
-#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub struct ItemId {
     #[xml_struct(attribute)]
     #[serde(rename = "@Id")]
@@ -957,7 +957,7 @@ pub enum Folder {
 }
 
 /// An array of items.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct Items {
     #[serde(rename = "$value", default)]
     pub inner: Vec<RealItem>,
@@ -976,7 +976,7 @@ pub struct Folders {
 /// Exchange item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/items>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[xml_struct(variant_ns_prefix = "t")]
 #[non_exhaustive]
 pub enum RealItem {
@@ -1032,7 +1032,7 @@ pub enum AttachmentItem {
 /// A date and time with second precision.
 // `time` provides an `Option<OffsetDateTime>` deserializer, but it does not
 // work with map fields which may be omitted, as in our case.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct DateTime(#[serde(with = "time::serde::iso8601")] pub time::OffsetDateTime);
 
 impl XmlSerialize for DateTime {
@@ -1057,7 +1057,7 @@ impl XmlSerialize for DateTime {
 /// An email message.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/message-ex15websvcsotherref>
-#[derive(Clone, Debug, Default, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Message {
     /// The MIME content of the item.
@@ -1066,6 +1066,7 @@ pub struct Message {
 
     /// The item's Exchange identifier.
     #[xml_struct(ns_prefix = "t")]
+    #[serde(rename = "ItemID")]
     pub item_id: Option<ItemId>,
 
     /// The identifier for the containing folder.
@@ -1239,7 +1240,7 @@ pub struct ExtendedProperty {
 /// A list of attachments.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attachments-ex15websvcsotherref>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub struct Attachments {
     #[serde(rename = "$value")]
     #[xml_struct(flatten)]
@@ -1248,7 +1249,7 @@ pub struct Attachments {
 
 /// A newtype around a vector of `Recipient`s, that is deserialized using
 /// `deserialize_recipients`.
-#[derive(Clone, Debug, Default, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub struct ArrayOfRecipients(
     #[serde(deserialize_with = "deserialize_recipients")] pub Vec<Recipient>,
 );
@@ -1268,7 +1269,7 @@ impl DerefMut for ArrayOfRecipients {
 }
 
 /// A single mailbox.
-#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Recipient {
     #[xml_struct(ns_prefix = "t")]
@@ -1304,7 +1305,7 @@ where
 }
 
 /// A list of Internet Message Format headers.
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct InternetMessageHeaders {
     pub internet_message_header: Vec<InternetMessageHeader>,
@@ -1313,7 +1314,7 @@ pub struct InternetMessageHeaders {
 /// A reference to a user or address which can send or receive mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailbox>
-#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Mailbox {
     /// The name of this mailbox's user.
@@ -1342,7 +1343,7 @@ pub struct Mailbox {
 /// A protocol used in routing mail.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/routingtype-emailaddress>
-#[derive(Clone, Copy, Debug, Default, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[xml_struct(text)]
 pub enum RoutingType {
     #[default]
@@ -1353,7 +1354,7 @@ pub enum RoutingType {
 /// The type of sender or recipient a mailbox represents.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mailboxtype>
-#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[xml_struct(text)]
 pub enum MailboxType {
     Mailbox,
@@ -1369,7 +1370,7 @@ pub enum MailboxType {
 /// The priority level of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/importance>
-#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[xml_struct(text)]
 pub enum Importance {
     Low,
@@ -1380,7 +1381,7 @@ pub enum Importance {
 /// A string value.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/string>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct StringElement {
     /// The string content.
@@ -1390,7 +1391,7 @@ pub struct StringElement {
 /// The sensitivity of the contents of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/sensitivity>
-#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[xml_struct(text)]
 pub enum Sensitivity {
     Normal,
@@ -1402,7 +1403,7 @@ pub enum Sensitivity {
 /// The body of an item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/body>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub struct Body {
     /// The content type of the body.
     #[serde(rename = "@BodyType")]
@@ -1425,7 +1426,7 @@ pub struct Body {
 /// The content type of an item's body.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/body>
-#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[xml_struct(text)]
 pub enum BodyType {
     HTML,
@@ -1435,7 +1436,7 @@ pub enum BodyType {
 /// An attachment to an Exchange item.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attachments-ex15websvcsotherref>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub enum Attachment {
     /// An attachment containing an Exchange item.
     ///
@@ -1551,7 +1552,7 @@ pub enum Attachment {
 /// An identifier for an attachment.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attachmentid>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub struct AttachmentId {
     /// A unique identifier for the attachment.
     #[serde(rename = "@Id")]
@@ -1573,7 +1574,7 @@ pub struct AttachmentId {
 /// Mail Extensions).
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/mimecontent>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub struct MimeContent {
     /// The character set of the MIME content if it contains [RFC 2045]-encoded
     /// text.
@@ -1592,7 +1593,7 @@ pub struct MimeContent {
 /// The headers of an Exchange item's MIME content.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/internetmessageheader>
-#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct InternetMessageHeader {
     /// The name of the header.
