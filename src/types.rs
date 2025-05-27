@@ -19,3 +19,4 @@ pub mod sync_folder_hierarchy;
 pub mod sync_folder_items;
 pub mod update_folder;
 pub mod update_item;
+pub mod update_junk_status;
