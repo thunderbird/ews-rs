@@ -1627,10 +1627,9 @@ pub struct MessageXml {
 
 #[cfg(test)]
 mod tests {
-    use quick_xml::Writer;
 
     use super::*;
-    use crate::Error;
+    use crate::{test_support::assert_serialized_content, Error};
 
     /// Tests that an [`ArrayOfRecipients`] correctly serializes into XML. It
     /// should serialize as multiple `<t:Mailbox>` elements, one per [`Recipient`].
@@ -1659,21 +1658,10 @@ mod tests {
 
         let recipients = ArrayOfRecipients(vec![alice, bob]);
 
-        // Serialize into XML.
-        let mut writer = {
-            let inner: Vec<u8> = Default::default();
-            Writer::new(inner)
-        };
-        recipients.serialize_as_element(&mut writer, "Recipients")?;
-
-        // Read the contents of the `Writer`'s buffer.
-        let buf = writer.into_inner();
-        let actual = std::str::from_utf8(buf.as_slice())
-            .map_err(|e| Error::UnexpectedResponse(e.to_string().into_bytes()))?;
-
         // Ensure the structure of the XML document is correct.
         let expected = "<Recipients><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Bob Test</t:Name><t:EmailAddress>bob@test.com</t:EmailAddress></t:Mailbox></Recipients>";
-        assert_eq!(expected, actual);
+
+        assert_serialized_content(&recipients, "Recipients", expected);
 
         Ok(())
     }
