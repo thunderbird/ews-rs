@@ -1066,7 +1066,6 @@ pub struct Message {
 
     /// The item's Exchange identifier.
     #[xml_struct(ns_prefix = "t")]
-    #[serde(rename = "ItemID")]
     pub item_id: Option<ItemId>,
 
     /// The identifier for the containing folder.

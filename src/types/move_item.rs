@@ -97,7 +97,7 @@ mod test {
                     <m:ResponseCode>NoError</m:ResponseCode>
                     <m:Items>
                         <t:Message>
-                        <t:ItemID Id="AAMkAd" ChangeKey="FwAAABY" />
+                        <t:ItemId Id="AAMkAd" ChangeKey="FwAAABY" />
                         </t:Message>
                     </m:Items>
                     </m:MoveItemResponseMessage>
