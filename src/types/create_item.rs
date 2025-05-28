@@ -6,11 +6,9 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::{
-    types::sealed::EnvelopeBodyContents, BaseFolderId, MessageDisposition, Operation,
-    OperationResponse, RealItem, MESSAGES_NS_URI,
+    types::sealed::EnvelopeBodyContents, BaseFolderId, ItemResponseMessage, MessageDisposition,
+    Operation, OperationResponse, RealItem, MESSAGES_NS_URI,
 };
-
-use super::common_response::ItemResponseMessage;
 
 /// A request to create (and optionally send) one or more Exchange items.
 ///
@@ -76,14 +74,16 @@ pub struct ResponseMessages {
 
 #[cfg(test)]
 mod test {
-    use crate::{test_support::assert_deserialized_content, types::common_response::ItemResponseMessage, Items, ResponseCode};
+    use crate::{
+        test_support::assert_deserialized_content, types::common_response::ItemResponseMessage,
+        Items, ResponseCode,
+    };
 
     use super::CreateItemResponse;
 
     #[test]
     fn test_deserialize_create_item_response() {
-        let content =
-            r#"<CreateItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"
+        let content = r#"<CreateItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"
                         xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"
                         xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
                     <m:ResponseMessages>
@@ -96,15 +96,13 @@ mod test {
 
         let expected = CreateItemResponse {
             response_messages: super::ResponseMessages {
-                create_item_response_message: vec![
-                    ItemResponseMessage {
-                        response_class: crate::ResponseClass::Success,
-                        response_code: Some(ResponseCode::NoError),
-                        message_text: None,
-                        items: Items { inner: vec![] },
-                    }
-                ]
-            }
+                create_item_response_message: vec![ItemResponseMessage {
+                    response_class: crate::ResponseClass::Success,
+                    response_code: Some(ResponseCode::NoError),
+                    message_text: None,
+                    items: Items { inner: vec![] },
+                }],
+            },
         };
 
         assert_deserialized_content(content, expected);

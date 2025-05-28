@@ -7,6 +7,7 @@ mod common_response;
 mod operations;
 
 pub use common::*;
+pub use common_response::*;
 pub use operations::*;
 pub mod soap;
 

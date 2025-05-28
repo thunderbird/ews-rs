@@ -5,7 +5,10 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use super::{common_response::ItemResponseMessage, sealed::EnvelopeBodyContents, BaseFolderId, BaseItemId, Operation, OperationResponse, MESSAGES_NS_URI};
+use super::{
+    sealed::EnvelopeBodyContents, BaseFolderId, BaseItemId, ItemResponseMessage, Operation,
+    OperationResponse, MESSAGES_NS_URI,
+};
 
 /// A request to move one or more Exchange items.
 ///
@@ -59,7 +62,9 @@ impl EnvelopeBodyContents for MoveItemResponse {
 #[cfg(test)]
 mod test {
     use crate::{
-        test_support::{assert_deserialized_content, assert_serialized_content}, types::common_response::ItemResponseMessage, BaseFolderId, BaseItemId, ItemId, Items, Message, RealItem, ResponseCode
+        test_support::{assert_deserialized_content, assert_serialized_content},
+        types::common_response::ItemResponseMessage,
+        BaseFolderId, BaseItemId, ItemId, Items, Message, RealItem, ResponseCode,
     };
 
     use super::{MoveItem, MoveItemResponse, MoveItemResponseMessages};
@@ -107,7 +112,7 @@ mod test {
                     message_text: None,
                     items: Items {
                         inner: vec![RealItem::Message(Message {
-                            item_id: Some(ItemId{
+                            item_id: Some(ItemId {
                                 id: "AAMkAd".to_string(),
                                 change_key: Some("FwAAABY".to_string()),
                             }),
