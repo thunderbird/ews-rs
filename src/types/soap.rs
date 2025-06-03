@@ -32,7 +32,7 @@ use super::server_version::ExchangeServerVersion;
 #[derive(Clone, Debug, Deserialize, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
 #[non_exhaustive]
-pub enum SoapHeader {
+pub enum Header {
     /// The schema version targeted by the attached request.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/requestserverversion>
@@ -54,7 +54,7 @@ pub enum SoapHeader {
 /// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383494>
 #[derive(Clone, Debug)]
 pub struct Envelope<B> {
-    pub headers: Vec<SoapHeader>,
+    pub headers: Vec<Header>,
     pub body: B,
 }
 

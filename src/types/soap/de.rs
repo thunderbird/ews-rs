@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use serde::{de::Visitor, Deserialize, Deserializer};
 
-use crate::soap::SoapHeader;
+use crate::soap::Header;
 use crate::OperationResponse;
 
 /// A helper for deserialization of SOAP envelopes.
@@ -29,7 +29,7 @@ where
 #[derive(Deserialize)]
 pub struct SoapHeaders {
     #[serde(rename = "$value", default)]
-    pub inner: Vec<SoapHeader>,
+    pub inner: Vec<Header>,
 }
 
 fn deserialize_body<'de, D, T>(body: D) -> Result<T, D::Error>
