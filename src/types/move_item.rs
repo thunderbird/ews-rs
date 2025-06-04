@@ -24,6 +24,10 @@ pub struct MoveItem {
     ///
     /// See https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids
     pub item_ids: Vec<BaseItemId>,
+    /// Whether or not to return the new item idententifers in the response.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/returnnewitemids>
+    pub return_new_item_ids: Option<bool>,
 }
 
 /// A response to a `MoveItem` operation.
@@ -80,6 +84,7 @@ mod test {
                 id: "AAAtAEF/swbAAA=".to_string(),
                 change_key: Some("EwAAABYA/s4b".to_string()),
             }],
+            return_new_item_ids: None,
         };
 
         let expected = r#"<MoveItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages"><ToFolderId><t:DistinguishedFolderId Id="drafts"/></ToFolderId><ItemIds><t:ItemId Id="AAAtAEF/swbAAA=" ChangeKey="EwAAABYA/s4b"/></ItemIds></MoveItem>"#;
