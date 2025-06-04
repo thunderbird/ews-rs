@@ -12,17 +12,17 @@ use super::{
 
 /// A request to move one or more Exchange items.
 ///
-/// See https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/moveitem
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/moveitem>
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct MoveItem {
     /// The destination folder for the moved item.
     ///
-    /// See https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/tofolderid
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/tofolderid>
     pub to_folder_id: BaseFolderId,
     /// The unique identifiers for each item to move.
     ///
-    /// See https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/itemids>
     pub item_ids: Vec<BaseItemId>,
     /// Whether or not to return the new item idententifers in the response.
     ///
@@ -32,7 +32,7 @@ pub struct MoveItem {
 
 /// A response to a `MoveItem` operation.
 ///
-/// See https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/moveitemresponse
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/moveitemresponse>
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct MoveItemResponse {
