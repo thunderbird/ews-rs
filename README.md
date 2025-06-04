@@ -12,7 +12,7 @@ can be accessed locally after cloning this repository and generating it:
 ```bash
 git clone https://github.com/thunderbird/ews-rs.git
 cd ews-rs
-cargo doc
+cargo doc --open
 ```
 
 ## Report issues
