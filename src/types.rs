@@ -3,9 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 mod common;
+mod common_response;
 mod operations;
 
 pub use common::*;
+pub use common_response::*;
 pub use operations::*;
 pub mod soap;
 
@@ -15,6 +17,7 @@ pub mod delete_folder;
 pub mod delete_item;
 pub mod get_folder;
 pub mod get_item;
+pub mod move_item;
 pub mod server_version;
 pub mod sync_folder_hierarchy;
 pub mod sync_folder_items;
