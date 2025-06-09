@@ -1645,7 +1645,7 @@ pub struct MessageXml {
 mod tests {
 
     use super::*;
-    use crate::{test_support::assert_serialized_content, Error};
+    use crate::{test_utils::assert_serialized_content, Error};
 
     /// Tests that an [`ArrayOfRecipients`] correctly serializes into XML. It
     /// should serialize as multiple `<t:Mailbox>` elements, one per [`Recipient`].

@@ -120,8 +120,8 @@ pub struct UpdateFolderResponseMessage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::assert_deserialized_content;
-    use crate::test_support::assert_serialized_content;
+    use crate::test_utils::assert_deserialized_content;
+    use crate::test_utils::assert_serialized_content;
     use crate::BaseFolderId;
     use crate::FolderId;
 

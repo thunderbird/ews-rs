@@ -5,7 +5,7 @@
 use thiserror::Error;
 
 #[cfg(test)]
-mod test_support;
+mod test_utils;
 
 mod types;
 
