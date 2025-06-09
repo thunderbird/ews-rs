@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 mod common;
-mod common_response;
 mod operations;
 
 pub use common::*;
-pub use common_response::*;
 pub use operations::*;
 pub mod soap;
 

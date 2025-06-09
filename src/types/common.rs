@@ -729,6 +729,22 @@ pub enum ResponseCode {
     ErrorTargetDomainNotSupported,
 }
 
+/// The common format of response messages.
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct ItemResponseMessage {
+    /// The status of the corresponding request, i.e. whether it succeeded or
+    /// resulted in an error.
+    #[serde(rename = "@ResponseClass")]
+    pub response_class: ResponseClass,
+
+    pub response_code: Option<ResponseCode>,
+
+    pub message_text: Option<String>,
+
+    pub items: Items,
+}
+
 /// An identifier for an Exchange folder.
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]

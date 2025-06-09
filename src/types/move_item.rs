@@ -67,7 +67,7 @@ impl EnvelopeBodyContents for MoveItemResponse {
 mod test {
     use crate::{
         test_support::{assert_deserialized_content, assert_serialized_content},
-        types::common_response::ItemResponseMessage,
+        types::common::ItemResponseMessage,
         BaseFolderId, BaseItemId, ItemId, Items, Message, RealItem, ResponseCode,
     };
 

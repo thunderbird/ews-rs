@@ -75,7 +75,7 @@ pub struct ResponseMessages {
 #[cfg(test)]
 mod test {
     use crate::{
-        test_support::assert_deserialized_content, types::common_response::ItemResponseMessage,
+        test_support::assert_deserialized_content, types::common::ItemResponseMessage,
         Items, ResponseCode,
     };
 
