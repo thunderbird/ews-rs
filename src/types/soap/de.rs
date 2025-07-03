@@ -63,9 +63,8 @@ where
                 // element with the name of the expected operation response.
                 let expected = T::name();
                 if name.as_str() != expected {
-                    return Err(serde::de::Error::custom(format!(
-                        "unknown element `{}`, expected {}",
-                        name, expected
+                    return Err(serde::de::Error::custom(format_args!(
+                        "unknown element `{name}`, expected {expected}"
                     )));
                 }
 
@@ -77,9 +76,8 @@ where
                     Some(name) => {
                         // The response body contained more than one element,
                         // which violates our expectations.
-                        Err(serde::de::Error::custom(format!(
-                            "unexpected element `{}`",
-                            name
+                        Err(serde::de::Error::custom(format_args!(
+                            "unexpected element `{name}`"
                         )))
                     }
                     None => Ok(value),
