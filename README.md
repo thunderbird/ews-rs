@@ -1,8 +1,10 @@
 # Exchange Web Services
 
 This rust crate holds types that represent data structures and operations for
-the Exchange Web Services API, as well as the necessary infrastructure to
-serialize and deserialize them to/from XML.
+the [Exchange Web Services
+API](https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/ews-reference-for-exchange),
+as well as the necessary infrastructure to serialize and deserialize them
+to/from XML.
 
 ## Documentation
 
@@ -24,9 +26,12 @@ feature request for this crate, please do so on Bugzilla
 
 ## Minimum Supported Rust Version
 
-The MSRV for `ews` is currently 1.62.1.
+The `ews` crate follows the Firefox MSRV policy described
+[here](https://firefox-source-docs.mozilla.org/writing-rust-code/update-policy.html#minimum-supported-rust-version).
+It is therefore safe to assume the crate's effective MSRV is the one matching
+the latest Firefox release.
 
 ## License
 
-`ews` is available under the terms of the Mozilla Public License, version 2.0.
-See either our [LICENSE] file or [https://www.mozilla.org/en-US/MPL/2.0/].
+The `ews` crate is available under the terms of the Mozilla Public License,
+version 2.0. See either our [LICENSE] file or [https://www.mozilla.org/en-US/MPL/2.0/].
