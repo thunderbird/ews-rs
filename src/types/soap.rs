@@ -9,22 +9,65 @@ use quick_xml::{
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::{Error, MessageXml, ResponseCode, SOAP_NS_URI, TYPES_NS_URI};
+use crate::{
+    types::sealed, types::server_version, Error, MessageXml, Operation, OperationResponse,
+    ResponseCode, SOAP_NS_URI, TYPES_NS_URI,
+};
 
-/// A SOAP envelope wrapping an EWS operation.
+mod de;
+use self::de::DeserializeEnvelope;
+
+use super::server_version::ExchangeServerVersion;
+
+/// An element that can be found in the `soap:Header` section of an request or a
+/// response.
+///
+/// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383497>
+//
+// Currently, request headers are represented as struct variants and response
+// headers are represented as tuple variants. Ideally we should use tuple
+// variants everywhere, but, right now, doing so for request headers would
+// remove their XML attributes due to
+// https://github.com/thunderbird/xml-struct-rs/issues/9
+#[derive(Clone, Debug, Deserialize, XmlSerialize)]
+#[xml_struct(variant_ns_prefix = "t")]
+#[non_exhaustive]
+pub enum Header {
+    /// The schema version targeted by the attached request.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/requestserverversion>
+    RequestServerVersion {
+        #[xml_struct(attribute)]
+        #[serde(rename = "@Version")]
+        version: ExchangeServerVersion,
+    },
+
+    /// The version information of the Exchange Server instance that generated
+    /// the attached response.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/serverversioninfo>s
+    ServerVersionInfo(server_version::ServerVersionInfo),
+}
+
+/// A SOAP envelope containing the body of an EWS operation or response.
 ///
 /// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383494>
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Envelope<B> {
+    pub headers: Vec<Header>,
     pub body: B,
 }
 
 impl<B> Envelope<B>
 where
-    B: XmlSerialize,
+    B: Operation,
 {
     /// Serializes the SOAP envelope as a complete XML document.
     pub fn as_xml_document(&self) -> Result<Vec<u8>, Error> {
+        const SOAP_ENVELOPE: &str = "soap:Envelope";
+        const SOAP_HEADER: &str = "soap:Header";
+        const SOAP_BODY: &str = "soap:Body";
+
         let mut writer = {
             let inner: Vec<u8> = Default::default();
             Writer::new(inner)
@@ -33,16 +76,25 @@ where
         // All EWS examples use XML 1.0 with UTF-8, so stick to that for now.
         writer.write_event(Event::Decl(BytesDecl::new("1.0", Some("utf-8"), None)))?;
 
-        // To get around having to make `Envelope` itself implement
-        // `XmlSerialize`
+        // We manually write these elements in order to control the name we
+        // write the body with.
         writer.write_event(Event::Start(
-            BytesStart::new("soap:Envelope")
+            BytesStart::new(SOAP_ENVELOPE)
                 .with_attributes([("xmlns:soap", SOAP_NS_URI), ("xmlns:t", TYPES_NS_URI)]),
         ))?;
 
-        self.body.serialize_as_element(&mut writer, "soap:Body")?;
+        // Write the SOAP headers.
+        self.headers
+            .serialize_as_element(&mut writer, SOAP_HEADER)?;
 
-        writer.write_event(Event::End(BytesEnd::new("soap:Envelope")))?;
+        writer.write_event(Event::Start(BytesStart::new(SOAP_BODY)))?;
+
+        // Write the operation itself.
+        self.body
+            .serialize_as_element(&mut writer, <B as sealed::EnvelopeBodyContents>::name())?;
+
+        writer.write_event(Event::End(BytesEnd::new(SOAP_BODY)))?;
+        writer.write_event(Event::End(BytesEnd::new(SOAP_ENVELOPE)))?;
 
         Ok(writer.into_inner())
     }
@@ -50,22 +102,10 @@ where
 
 impl<B> Envelope<B>
 where
-    B: for<'de> Deserialize<'de>,
+    B: OperationResponse,
 {
     /// Populates an [`Envelope`] from raw XML.
     pub fn from_xml_document(document: &[u8]) -> Result<Self, Error> {
-        #[derive(Deserialize)]
-        #[serde(rename_all = "PascalCase")]
-        struct DummyEnvelope<T> {
-            body: DummyBody<T>,
-        }
-
-        #[derive(Deserialize)]
-        struct DummyBody<T> {
-            #[serde(rename = "$value")]
-            inner: T,
-        }
-
         // The body of an envelope can contain a fault, indicating an error with
         // a request. We want to parse that and return it as the `Err` portion
         // of a result. However, Microsoft includes a field in their fault
@@ -73,17 +113,24 @@ where
         // containing `xs:any`, meaning there is no documented schema for its
         // contents. However, it may contain details relevant for debugging, so
         // we want to capture it. Since we don't know what it contains, we
-        // settle for capturing it as XML test, but serde doesn't give us a nice
+        // settle for capturing it as XML text, but serde doesn't give us a nice
         // way of doing that, so we perform this step separately.
         let fault = extract_maybe_fault(document)?;
         if let Some(fault) = fault {
             return Err(Error::RequestFault(Box::new(fault)));
         }
 
-        let envelope: DummyEnvelope<B> = quick_xml::de::from_reader(document)?;
+        let de = &mut quick_xml::de::Deserializer::from_reader(document);
+
+        // `serde_path_to_error` ensures that we get sufficient information to
+        // debug errors in deserialization. serde's default errors only provide
+        // the immediate error with no context; this gives us a description of
+        // the context within the structure.
+        let envelope: DeserializeEnvelope<B> = serde_path_to_error::deserialize(de)?;
 
         Ok(Envelope {
-            body: envelope.body.inner,
+            headers: envelope.header.inner,
+            body: envelope.body,
         })
     }
 }
@@ -171,7 +218,24 @@ fn parse_detail(mut reader: ScopedReader) -> Result<FaultDetail, Error> {
     while let Some((name, subreader)) = reader.maybe_get_next_subreader()? {
         match name.as_slice() {
             b"ResponseCode" => {
-                detail.response_code.replace(subreader.to_string()?.into());
+                // This is a hack to avoid an explicit `TryFrom` impl for
+                // `ResponseCode` and to reuse existing machinery/error types.
+                #[derive(Deserialize)]
+                struct ResponseCodeFrame {
+                    #[serde(rename = "ResponseCode")]
+                    response_code: ResponseCode,
+                }
+
+                // `quick_xml` requires us to have some sort of element around
+                // the text to be deserialized or it fails.
+                let frame_text = format!(
+                    "<root><ResponseCode>{}</ResponseCode></root>",
+                    subreader.to_string()?
+                );
+                let de = &mut quick_xml::de::Deserializer::from_reader(frame_text.as_bytes());
+                let frame: ResponseCodeFrame = serde_path_to_error::deserialize(de)?;
+
+                detail.response_code.replace(frame.response_code);
             }
 
             b"Message" => {
@@ -322,7 +386,7 @@ impl<'content> ScopedReader<'content> {
         // send all responses as UTF-8. We'll encounter bigger problems
         // elsewhere if we run into a non-UTF-8 document, most notably that we
         // currently don't enable the `encoding` feature for quick-xml.
-        return Ok(Self::from_bytes(content));
+        Ok(Self::from_bytes(content))
     }
 
     /// Gets a string representation of the contents of the current reader.
@@ -335,7 +399,7 @@ impl<'content> ScopedReader<'content> {
 /// request.
 ///
 /// See <https://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383507>
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Fault {
     /// An error code indicating the fault in the original request.
     // While `faultcode` is defined in the SOAP spec as a `QName`, we avoid
@@ -359,7 +423,7 @@ pub struct Fault {
 /// EWS-specific details regarding a SOAP fault.
 ///
 /// This element is not documented in the EWS reference.
-#[derive(Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 #[non_exhaustive]
 pub struct FaultDetail {
     /// An error code indicating the nature of the issue.
@@ -391,13 +455,13 @@ pub struct FaultDetail {
 mod tests {
     use serde::Deserialize;
 
-    use crate::Error;
+    use crate::{types::sealed::EnvelopeBodyContents, Error, OperationResponse, ResponseCode};
 
     use super::Envelope;
 
     #[test]
     fn deserialize_envelope_with_content() {
-        #[derive(Deserialize)]
+        #[derive(Clone, Debug, Deserialize)]
         struct SomeStruct {
             text: String,
 
@@ -405,9 +469,17 @@ mod tests {
             _other_field: (),
         }
 
+        impl OperationResponse for SomeStruct {}
+
+        impl EnvelopeBodyContents for SomeStruct {
+            fn name() -> &'static str {
+                "Foo"
+            }
+        }
+
         // This XML is contrived, with a custom structure defined in order to
         // test the generic behavior of the interface.
-        let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><foo:Foo><text>testing content</text><other_field/></foo:Foo></s:Body></s:Envelope>"#;
+        let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header></s:Header><s:Body><foo:Foo><text>testing content</text><other_field/></foo:Foo></s:Body></s:Envelope>"#;
 
         let actual: Envelope<SomeStruct> =
             Envelope::from_xml_document(xml.as_bytes()).expect("deserialization should succeed");
@@ -421,10 +493,21 @@ mod tests {
 
     #[test]
     fn deserialize_envelope_with_schema_fault() {
+        #[derive(Clone, Debug, Deserialize)]
+        struct Foo;
+
+        impl OperationResponse for Foo {}
+
+        impl EnvelopeBodyContents for Foo {
+            fn name() -> &'static str {
+                "Foo"
+            }
+        }
+
         // This XML is drawn from testing data for `evolution-ews`.
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultcode xmlns:a="http://schemas.microsoft.com/exchange/services/2006/types">a:ErrorSchemaValidation</faultcode><faultstring xml:lang="en-US">The request failed schema validation: The 'Id' attribute is invalid - The value 'invalidparentid' is invalid according to its datatype 'http://schemas.microsoft.com/exchange/services/2006/types:DistinguishedFolderIdNameType' - The Enumeration constraint failed.</faultstring><detail><e:ResponseCode xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">ErrorSchemaValidation</e:ResponseCode><e:Message xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">The request failed schema validation.</e:Message><t:MessageXml xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"><t:LineNumber>2</t:LineNumber><t:LinePosition>630</t:LinePosition><t:Violation>The 'Id' attribute is invalid - The value 'invalidparentid' is invalid according to its datatype 'http://schemas.microsoft.com/exchange/services/2006/types:DistinguishedFolderIdNameType' - The Enumeration constraint failed.</t:Violation></t:MessageXml></detail></s:Fault></s:Body></s:Envelope>"#;
 
-        let err = <Envelope<()>>::from_xml_document(xml.as_bytes())
+        let err = <Envelope<Foo>>::from_xml_document(xml.as_bytes())
             .expect_err("should return error when body contains fault");
 
         if let Error::RequestFault(fault) = err {
@@ -441,7 +524,7 @@ mod tests {
             let detail = fault.detail.expect("fault detail should be present");
             assert_eq!(
                 detail.response_code,
-                Some("ErrorSchemaValidation".into()),
+                Some(ResponseCode::ErrorSchemaValidation),
                 "response code should match original document"
             );
             assert_eq!(
@@ -457,18 +540,29 @@ mod tests {
                 "back off milliseconds should not be present"
             );
         } else {
-            panic!("error should be request fault");
+            panic!("error should be request fault, got: {err:?}");
         }
     }
 
     #[test]
     fn deserialize_envelope_with_server_busy_fault() {
+        #[derive(Clone, Debug, Deserialize)]
+        struct Foo;
+
+        impl OperationResponse for Foo {}
+
+        impl EnvelopeBodyContents for Foo {
+            fn name() -> &'static str {
+                "Foo"
+            }
+        }
+
         // This XML is contrived based on what's known of the shape of
         // `ErrorServerBusy` responses. It should be replaced when we have
         // real-life examples.
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultcode xmlns:a="http://schemas.microsoft.com/exchange/services/2006/types">a:ErrorServerBusy</faultcode><faultstring xml:lang="en-US">I made this up because I don't have real testing data. 🙃</faultstring><detail><e:ResponseCode xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">ErrorServerBusy</e:ResponseCode><e:Message xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">Who really knows?</e:Message><t:MessageXml xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types"><t:Value Name="BackOffMilliseconds">25</t:Value></t:MessageXml></detail></s:Fault></s:Body></s:Envelope>"#;
 
-        let err = <Envelope<()>>::from_xml_document(xml.as_bytes())
+        let err = <Envelope<Foo>>::from_xml_document(xml.as_bytes())
             .expect_err("should return error when body contains fault");
 
         // The testing here isn't as thorough as the invalid schema test due to
@@ -487,14 +581,14 @@ mod tests {
             let detail = fault.detail.expect("fault detail should be present");
             assert_eq!(
                 detail.response_code,
-                Some("ErrorServerBusy".into()),
+                Some(ResponseCode::ErrorServerBusy),
                 "response code should match original document"
             );
 
             let message_xml = detail.message_xml.expect("message XML should be present");
             assert_eq!(message_xml.back_off_milliseconds, Some(25));
         } else {
-            panic!("error should be request fault");
+            panic!("error should be request fault, got: {err:?}");
         }
     }
 }

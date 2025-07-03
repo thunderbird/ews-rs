@@ -5,38 +5,50 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::{
-    get_folder::{GetFolder, GetFolderResponse},
-    sync_folder_hierarchy::{SyncFolderHierarchy, SyncFolderHierarchyResponse},
-    MESSAGES_NS_URI,
-};
+/// A marker trait for EWS operations.
+///
+/// Types implementing this trait may appear in requests to EWS as the operation
+/// to be performed.
+///
+/// # Usage
+///
+/// See [`Envelope`] for details.
+///
+/// [`Envelope`]: crate::soap::Envelope
+pub trait Operation: XmlSerialize + sealed::EnvelopeBodyContents + std::fmt::Debug {
+    /// The structure returned by EWS in response to requests containing this
+    /// operation.
+    type Response: OperationResponse;
 
-/// Available EWS operations (requests) that can be performed against an
-/// Exchange server.
-#[derive(Debug, XmlSerialize)]
-#[xml_struct(default_ns = MESSAGES_NS_URI)]
-pub enum Operation {
-    /// Retrieve information regarding one or more folder(s).
+    /// Gets the name of the operation.
     ///
-    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/getfolder-operation#getfolder-request-example>
-    GetFolder(GetFolder),
-
-    /// Retrieve the latest changes in the folder hierarchy for this mailbox.
-    ///
-    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/syncfolderhierarchy-operation#syncfolderhierarchy-request-example>
-    SyncFolderHierarchy(SyncFolderHierarchy),
+    /// This is the same as the local part of the name of the XML element used
+    /// to represent this option.
+    fn name(&self) -> &'static str {
+        <Self as sealed::EnvelopeBodyContents>::name()
+    }
 }
 
-/// Responses to available operations.
-#[derive(Debug, Deserialize)]
-pub enum OperationResponse {
-    /// The response to a GetFolder operation.
-    ///
-    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/getfolder-operation#getfolder-response-example>
-    GetFolderResponse(GetFolderResponse),
+/// A marker trait for EWS operation responses.
+///
+/// Types implementing this trait may appear in responses from EWS after
+/// requesting an operation be performed.
+///
+/// # Usage
+///
+/// See [`Envelope`] for details.
+///
+/// [`Envelope`]: crate::soap::Envelope
+pub trait OperationResponse:
+    for<'de> Deserialize<'de> + sealed::EnvelopeBodyContents + std::fmt::Debug
+{
+}
 
-    /// The response to a SyncFolderHierarchy operation.
-    ///
-    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/syncfolderhierarchy-operation#successful-syncfolderhierarchy-response>
-    SyncFolderHierarchyResponse(SyncFolderHierarchyResponse),
+pub(super) mod sealed {
+    /// A trait for structures which may appear in the body of a SOAP envelope.
+    pub trait EnvelopeBodyContents {
+        /// Gets the name of the element enclosing the contents of this
+        /// structure when represented in XML.
+        fn name() -> &'static str;
+    }
 }

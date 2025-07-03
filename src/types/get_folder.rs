@@ -5,49 +5,76 @@
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::{BaseFolderId, Folder, FolderShape, ResponseClass};
+use crate::{
+    types::sealed::EnvelopeBodyContents, BaseFolderId, FolderShape, Folders, Operation,
+    OperationResponse, ResponseClass, ResponseCode, MESSAGES_NS_URI,
+};
 
-/// The request to get one or more folder(s).
+/// A request to get information on one or more folders.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/getfolder>
-#[derive(Debug, XmlSerialize)]
+#[derive(Clone, Debug, XmlSerialize)]
+#[xml_struct(default_ns = MESSAGES_NS_URI)]
 pub struct GetFolder {
+    /// A description of the information to be included in the response for each
+    /// retrieved folder.
     pub folder_shape: FolderShape,
+
+    /// A list of IDs for which to retrieve folder information.
     pub folder_ids: Vec<BaseFolderId>,
 }
 
-/// The response to a GetFolder request.
+impl Operation for GetFolder {
+    type Response = GetFolderResponse;
+}
+
+impl EnvelopeBodyContents for GetFolder {
+    fn name() -> &'static str {
+        "GetFolder"
+    }
+}
+
+/// A response to a [`GetFolder`] request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/getfolderresponse>
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct GetFolderResponse {
     pub response_messages: ResponseMessages,
 }
 
-/// A collection of response messages from a GetFolder response.
-#[derive(Debug, Deserialize)]
+impl OperationResponse for GetFolderResponse {}
+
+impl EnvelopeBodyContents for GetFolderResponse {
+    fn name() -> &'static str {
+        "GetFolderResponse"
+    }
+}
+
+/// A collection of responses for individual entities within a request.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/responsemessages>
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
     pub get_folder_response_message: Vec<GetFolderResponseMessage>,
 }
 
-/// A message in a GetFolder response.
+/// A response to a request for an individual folder within a [`GetFolder`] operation.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/getfolderresponsemessage>
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct GetFolderResponseMessage {
+    /// The status of the corresponding request, i.e. whether it succeeded or
+    /// resulted in an error.
     #[serde(rename = "@ResponseClass")]
     pub response_class: ResponseClass,
-    pub folders: Folders,
-}
 
-/// A list of folders in a GetFolder response message.
-///
-/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folders-ex15websvcsotherref>
-#[derive(Debug, Deserialize)]
-pub struct Folders {
-    #[serde(rename = "$value")]
-    pub inner: Vec<Folder>,
+    pub response_code: Option<ResponseCode>,
+
+    pub message_text: Option<String>,
+
+    /// A collection of the retrieved folders.
+    pub folders: Folders,
 }

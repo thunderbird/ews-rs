@@ -1,24 +1,32 @@
 # Exchange Web Services
 
-`ews` is a crate providing data structures and APIs for working with Microsoft's
-[Exchange Web Services API](https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/ews-reference-for-exchange).
+This rust crate holds types that represent data structures and operations for
+the Exchange Web Services API, as well as the necessary infrastructure to
+serialize and deserialize them to/from XML.
 
-## Status
-At present, the focus of this crate is providing Rust equivalents of the data
-structures specified in the EWS reference and API for serializing to and
-deserializing from XML.
-No client is provided for handling HTTP requests or responses, and as such,
-this crate does not provide handling of authentication, server-side throttling,
-or other error conditions. Additionally, it does not include an implementation
-of the Autodiscover protocol or any other means of discovering EWS endpoints.
-This crate was built to support the work-in-progress EWS protocol for
-[Thunderbird](https://thunderbird.net). If you have an interest in using this
-crate and it is missing functionality you need or have ideas for improved
-ergonomics, please get in touch with us.
+## Documentation
+
+The Cargo documentation for this repository is not currently hosted online. It
+can be accessed locally after cloning this repository and generating it:
+
+```bash
+git clone https://github.com/thunderbird/ews-rs.git
+cd ews-rs
+cargo doc --open
+```
+
+## Report issues
+
+The GitHub issue tracker for this repository is disabled to help us handle
+EWS-related Thunderbird-adjacent bugs more easily. To report an issue or file a
+feature request for this crate, please do so on Bugzilla
+[here](https://bugzilla.mozilla.org/enter_bug.cgi?product=MailNews%20Core&component=Networking:%20Exchange).
 
 ## Minimum Supported Rust Version
+
 The MSRV for `ews` is currently 1.62.1.
 
 ## License
+
 `ews` is available under the terms of the Mozilla Public License, version 2.0.
 See either our [LICENSE] file or [https://www.mozilla.org/en-US/MPL/2.0/].

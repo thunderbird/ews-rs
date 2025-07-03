@@ -4,6 +4,9 @@
 
 use thiserror::Error;
 
+#[cfg(test)]
+mod test_utils;
+
 mod types;
 
 pub use types::*;
@@ -14,7 +17,7 @@ pub enum Error {
     Serialize(#[from] xml_struct::Error),
 
     #[error("failed to deserialize structure from XML")]
-    Deserialize(#[from] quick_xml::DeError),
+    Deserialize(#[from] serde_path_to_error::Error<quick_xml::DeError>),
 
     #[error("invalid XML document")]
     InvalidXml(#[from] quick_xml::Error),
@@ -26,4 +29,7 @@ pub enum Error {
     // relatively low.
     #[error("a fault occurred in the request")]
     RequestFault(Box<soap::Fault>),
+
+    #[error("unknown server version: {0}")]
+    UnknownServerVersion(String),
 }
