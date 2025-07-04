@@ -9,6 +9,8 @@ use serde::{de::Visitor, Deserialize, Deserializer};
 use crate::soap::Header;
 use crate::OperationResponse;
 
+use super::Fault;
+
 /// A helper for deserialization of SOAP envelopes.
 ///
 /// This struct is declared separately from the more general [`Envelope`] type
@@ -21,9 +23,9 @@ pub(super) struct DeserializeEnvelope<T>
 where
     T: OperationResponse,
 {
-    pub header: SoapHeaders,
+    pub header: Option<SoapHeaders>,
     #[serde(deserialize_with = "deserialize_body")]
-    pub body: T,
+    pub body: Result<T, Fault>,
 }
 
 #[derive(Deserialize)]
@@ -32,7 +34,10 @@ pub struct SoapHeaders {
     pub inner: Vec<Header>,
 }
 
-fn deserialize_body<'de, D, T>(body: D) -> Result<T, D::Error>
+// in this context, outer Result handles serde Errors,
+// inner Result handles soap Faults
+
+fn deserialize_body<'de, D, T>(body: D) -> Result<Result<T, Fault>, D::Error>
 where
     D: Deserializer<'de>,
     T: OperationResponse,
@@ -43,11 +48,31 @@ where
 /// A visitor for custom name-based deserialization of operation responses.
 struct BodyVisitor<T>(PhantomData<T>);
 
+impl<'de, T> BodyVisitor<T> {
+    fn consume_final_none<A: serde::de::MapAccess<'de>>(
+        value: Result<T, Fault>,
+        mut map: A,
+    ) -> Result<Result<T, Fault>, A::Error> {
+        // To satisfy quick-xml's serde impl, we need to consume the final
+        // `None` key value in order to successfully complete.
+        match map.next_key::<String>()? {
+            Some(name) => {
+                // The response body contained more than one element,
+                // which violates our expectations.
+                Err(serde::de::Error::custom(format_args!(
+                    "unexpected element `{name}`"
+                )))
+            }
+            None => Ok(value),
+        }
+    }
+}
+
 impl<'de, T> Visitor<'de> for BodyVisitor<T>
 where
     T: OperationResponse,
 {
-    type Value = T;
+    type Value = Result<T, Fault>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("EWS operation response body")
@@ -57,31 +82,23 @@ where
     where
         A: serde::de::MapAccess<'de>,
     {
-        match map.next_key::<String>()? {
+        match map.next_key::<String>()?.as_deref() {
+            Some("Fault") => {
+                let value: Fault = map.next_value()?;
+                Self::consume_final_none(Err(value), map)
+            }
             Some(name) => {
                 // We expect the body of the response to contain a single
                 // element with the name of the expected operation response.
                 let expected = T::name();
-                if name.as_str() != expected {
+                if name != expected {
                     return Err(serde::de::Error::custom(format_args!(
                         "unknown element `{name}`, expected {expected}"
                     )));
                 }
 
-                let value = map.next_value()?;
-
-                // To satisfy quick-xml's serde impl, we need to consume the
-                // final `None` key value in order to successfully complete.
-                match map.next_key::<String>()? {
-                    Some(name) => {
-                        // The response body contained more than one element,
-                        // which violates our expectations.
-                        Err(serde::de::Error::custom(format_args!(
-                            "unexpected element `{name}`"
-                        )))
-                    }
-                    None => Ok(value),
-                }
+                let value: T = map.next_value()?;
+                Self::consume_final_none(Ok(value), map)
             }
             None => Err(serde::de::Error::invalid_type(
                 serde::de::Unexpected::Map,
