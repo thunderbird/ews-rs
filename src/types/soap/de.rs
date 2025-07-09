@@ -80,30 +80,45 @@ where
     where
         A: serde::de::MapAccess<'de>,
     {
-        match map.next_key::<String>()?.as_deref() {
-            Some("Fault") => {
-                let value: Fault = map.next_value()?;
-                consume_final_none(map)?;
-                Ok(EnvelopeContent::Fault(value))
-            }
-            Some(name) => {
-                // We expect the body of the response to contain a single
-                // element with the name of the expected operation response.
-                let expected = T::name();
-                if name != expected {
-                    return Err(serde::de::Error::custom(format_args!(
-                        "unknown element `{name}`, expected {expected}"
-                    )));
+        loop {
+            match map.next_key::<String>()?.as_deref() {
+                Some("Fault") => {
+                    let value: Fault = map.next_value()?;
+                    consume_final_none(map)?;
+                    return Ok(EnvelopeContent::Fault(value));
                 }
+                Some(name) if name.starts_with('@') => {
+                    // Serde doesn't differentiate between attributes and nested
+                    // elements, and treats the former just like the latter.
+                    // Since we're only really interested in the first nested
+                    // element, we can ignore attributes (which are recognizable
+                    // from their starting character '@'). We just need to
+                    // "pump" the next value so we don't go out of sync in
+                    // the next iteration.
+                    map.next_value::<()>()?;
+                    continue;
+                }
+                Some(name) => {
+                    // We expect the body of the response to contain a single
+                    // element with the name of the expected operation response.
+                    let expected = T::name();
+                    if name != expected {
+                        return Err(serde::de::Error::custom(format_args!(
+                            "unknown element `{name}`, expected {expected}"
+                        )));
+                    }
 
-                let value: T = map.next_value()?;
-                consume_final_none(map)?;
-                Ok(EnvelopeContent::Body(value))
+                    let value: T = map.next_value()?;
+                    consume_final_none(map)?;
+                    return Ok(EnvelopeContent::Body(value));
+                }
+                None => {
+                    return Err(serde::de::Error::invalid_type(
+                        serde::de::Unexpected::Map,
+                        &self,
+                    ))
+                }
             }
-            None => Err(serde::de::Error::invalid_type(
-                serde::de::Unexpected::Map,
-                &self,
-            )),
         }
     }
 }
