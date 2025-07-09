@@ -190,11 +190,16 @@ mod tests {
     use serde::Deserialize;
 
     use crate::{
-        types::common::message_xml::{
-            MessageXmlElement, MessageXmlElements, MessageXmlTagged, MessageXmlValue, ServerBusy,
+        get_folder::{GetFolderResponse, GetFolderResponseMessage, ResponseMessages},
+        types::{
+            common::message_xml::{
+                MessageXmlElement, MessageXmlElements, MessageXmlTagged, MessageXmlValue,
+                ServerBusy,
+            },
+            sealed::EnvelopeBodyContents,
         },
-        types::sealed::EnvelopeBodyContents,
-        Error, MessageXml, OperationResponse, ResponseCode,
+        Error, Folder, FolderId, Folders, MessageXml, OperationResponse, ResponseClass,
+        ResponseCode,
     };
 
     use super::Envelope;
@@ -428,5 +433,77 @@ mod tests {
         } else {
             panic!("error should be request fault, got: {err:?}");
         }
+    }
+
+    /// Test that deserializing succeeds when the SOAP body includes attributes.
+    /// Serde considers attributes to be the same as nested elements, so our
+    /// deserialization code for SOAP bodies needs to explicitly ignore them.
+    #[test]
+    fn deserialize_envelope_with_attributes_in_body() {
+        // This XML comes from a real life request against one of our test
+        // accounts, using an Exchange Server 2016 instance.
+        let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+                                <s:Envelope
+                                    xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+                                    <s:Header>
+                                        <h:ServerVersionInfo MajorVersion="15" MinorVersion="1" MajorBuildNumber="2507" MinorBuildNumber="57" Version="V2017_07_11"
+                                            xmlns:h="http://schemas.microsoft.com/exchange/services/2006/types"
+                                            xmlns="http://schemas.microsoft.com/exchange/services/2006/types"
+                                            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                                            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>
+                                        </s:Header>
+                                        <s:Body
+                                            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+                                            <m:GetFolderResponse
+                                                xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"
+                                                xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
+                                                <m:ResponseMessages>
+                                                    <m:GetFolderResponseMessage ResponseClass="Success">
+                                                        <m:ResponseCode>NoError</m:ResponseCode>
+                                                        <m:Folders>
+                                                            <t:Folder>
+                                                                <t:FolderId Id="AQMkADRiZGNhMWIxLWIwOGMtNDQAZjktODk3OS0zZWIxODJjNmI4NWYALgAAA8ZmIFRjoG9PpiagjztHaIcBAFSUeaisgPtKo3c6hV+VzpcAAAIBCAAAAA==" ChangeKey="AQAAABYAAABUlHmorID7SqN3OoVflc6XAAAAAACW"/>
+                                                            </t:Folder>
+                                                        </m:Folders>
+                                                    </m:GetFolderResponseMessage>
+                                                </m:ResponseMessages>
+                                            </m:GetFolderResponse>
+                                        </s:Body>
+                                    </s:Envelope>"#;
+
+        let expected_resp = GetFolderResponse {
+            response_messages: ResponseMessages {
+                get_folder_response_message: vec![GetFolderResponseMessage {
+                    response_class: ResponseClass::Success,
+                    response_code: Some(ResponseCode::NoError),
+                    message_text: None,
+                    folders: Folders { inner: vec![
+                        Folder::Folder {
+                            folder_id: Some(FolderId {
+                                id: "AQMkADRiZGNhMWIxLWIwOGMtNDQAZjktODk3OS0zZWIxODJjNmI4NWYALgAAA8ZmIFRjoG9PpiagjztHaIcBAFSUeaisgPtKo3c6hV+VzpcAAAIBCAAAAA==".to_owned(),
+                                change_key: Some("AQAAABYAAABUlHmorID7SqN3OoVflc6XAAAAAACW".to_owned())
+                            }),
+                            parent_folder_id: None,
+                            folder_class: None,
+                            display_name: None,
+                            total_count: None,
+                            child_folder_count: None,
+                            extended_property: None,
+                            unread_count: None
+                        }
+                    ]},
+                }],
+            },
+        };
+
+        // Check that the XML is successfully deserialized in the first place,
+        // with no error caused by the presence of attributes in the `s:Body`
+        // element.
+        let envelope: Envelope<GetFolderResponse> =
+            Envelope::from_xml_document(xml.as_bytes()).expect("deserialization should succeed");
+
+        // Check that the parsed body is in line with what we expect.
+        assert_eq!(envelope.body, expected_resp);
     }
 }
