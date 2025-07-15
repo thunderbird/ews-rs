@@ -59,7 +59,7 @@ pub enum MessageXmlElement {
     MessageXmlValue(MessageXmlValue),
 }
 
-/// Data associated with a [`ResponseCode::ErrorServerBusy`].
+/// Data associated with a [`ResponseCode::ErrorServerBusy`](crate::ResponseCode::ErrorServerBusy).
 #[derive(Debug, Clone, PartialEq)]
 pub struct ServerBusy {
     /// The duration in milliseconds to wait before making additional requests.
@@ -128,7 +128,7 @@ impl MessageXmlElementsVisitor {
 }
 
 /// An internal helper type used in the [`MessageXmlElementsVisitor`] to extract the
-/// text of an element while discarding the [`TYPES_NS_URI`] XML namespace declaration.
+/// text of an element while discarding the [`TYPES_NS_URI`](crate::TYPES_NS_URI) XML namespace declaration.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 enum Text {
     #[serde(rename = "$text")]
