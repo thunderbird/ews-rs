@@ -80,17 +80,12 @@ impl EnvelopeBodyContents for SyncFolderItemsResponse {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ResponseMessages {
-    pub sync_folder_items_response_message: Vec<SyncFolderItemsResponseMessage>,
+    pub sync_folder_items_response_message: Vec<ResponseClass<SyncFolderItemsResponseMessage>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct SyncFolderItemsResponseMessage {
-    /// The status of the corresponding request, i.e. whether it succeeded or
-    /// resulted in an error.
-    #[serde(rename = "@ResponseClass")]
-    pub response_class: ResponseClass,
-
     /// An identifier for the synchronization state following application of the
     /// changes included in this response.
     pub sync_state: String,
