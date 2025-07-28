@@ -250,8 +250,8 @@ mod tests {
     #[operation_response(Bar)]
     struct Foo {}
 
-    #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
     /// A meaningless struct.
+    #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
     pub struct Bar {}
 
     #[test]

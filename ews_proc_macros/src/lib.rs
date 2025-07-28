@@ -1,19 +1,19 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, ItemStruct, Path};
+use syn::{parse_macro_input, Ident, ItemStruct};
 
-/// Annotate the class as having responses of the given type, generate a response struct for it, and
-/// implement the expected attributes for this struct and its response.
+/// Annotate a struct as having its response include response messages of the given type,
+/// and generate a response struct for it with the expected attributes and methods.
 ///
 /// Response structs are named by appending "Response" to the end of the name of this struct.
 #[proc_macro_attribute]
-pub fn operation_response(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let response_type_path = parse_macro_input!(attr as Path);
-    let response_type = response_type_path.segments.last().unwrap().ident.clone();
+pub fn operation_response(attr: TokenStream, annotated_item: TokenStream) -> TokenStream {
+    let response_type = parse_macro_input!(attr as Ident);
+    let input_struct = parse_macro_input!(annotated_item as ItemStruct);
 
-    let input_struct = parse_macro_input!(item as ItemStruct);
     let request_name = input_struct.ident.clone();
-    let response_name = syn::Ident::new(&format!("{request_name}Response"), request_name.span());
+    let response_name = Ident::new(&format!("{request_name}Response"), request_name.span());
+
     let response_doc = format!(
         r#"A response to a [`{request_name}`] operation.
 

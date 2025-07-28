@@ -7,7 +7,7 @@ use serde::{Deserialize, Deserializer};
 use std::fmt;
 use std::marker::PhantomData;
 
-/// A generic representation of all response messages from a request.
+/// A generic representation of a response message from a request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/responsemessages>
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
