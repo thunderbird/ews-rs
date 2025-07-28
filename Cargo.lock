@@ -22,7 +22,7 @@ dependencies = [
 name = "ews"
 version = "0.1.0"
 dependencies = [
- "ews_macros",
+ "ews_proc_macros",
  "log",
  "quick-xml",
  "serde",
@@ -33,7 +33,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ews_macros"
+name = "ews_proc_macros"
 version = "0.1.0"
 dependencies = [
  "quote",

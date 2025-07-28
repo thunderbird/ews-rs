@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use ews_macros::operation_response;
+use ews_proc_macros::operation_response;
 use xml_struct::XmlSerialize;
 
 use crate::{BaseFolderId, Folder, FolderResponseMessage, MESSAGES_NS_URI};

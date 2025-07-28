@@ -187,7 +187,7 @@ pub struct FaultDetail {
 
 #[cfg(test)]
 mod tests {
-    use ews_macros::operation_response;
+    use ews_proc_macros::operation_response;
     use serde::Deserialize;
     use xml_struct::XmlSerialize;
 

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use ews_macros::operation_response;
+use ews_proc_macros::operation_response;
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
