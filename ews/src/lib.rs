@@ -11,6 +11,10 @@ mod types;
 
 pub use types::*;
 
+// Ensure we have to explicitly import interop to get the trait implementations
+// therein.
+pub mod interop;
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("failed to serialize structure as XML")]

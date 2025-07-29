@@ -272,7 +272,7 @@ pub struct CopyMoveFolderData {
     pub to_folder_id: BaseFolderId,
     /// The identifiers for each folder to copy/move.
     ///
-    /// https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderids
+    /// <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/folderids>
     pub folder_ids: Vec<BaseFolderId>,
 }
 
