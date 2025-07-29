@@ -9,7 +9,8 @@
 //! traits.
 //!
 //! These are placed in a separate module from the underlying types to
-//! ensure these implementations are opt-in for library clients.
+//! conditioned on a feature to ensure these implementations are opt-in for
+//! library clients.
 
 use crate::{
     copy_folder::CopyFolder, copy_item::CopyItem, move_folder::MoveFolder, move_item::MoveItem,
