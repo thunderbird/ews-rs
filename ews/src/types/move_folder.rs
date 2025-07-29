@@ -21,7 +21,10 @@ pub struct MoveFolder {
 #[cfg(test)]
 mod test {
     use crate::{
-        move_folder::{MoveFolder, MoveFolderResponse}, test_utils::{assert_deserialized_content, assert_serialized_content}, BaseFolderId, CopyMoveFolderData, Folder, FolderId, FolderResponseMessage, Folders, ResponseClass, ResponseMessages
+        move_folder::{MoveFolder, MoveFolderResponse},
+        test_utils::{assert_deserialized_content, assert_serialized_content},
+        BaseFolderId, CopyMoveFolderData, Folder, FolderId, FolderResponseMessage, Folders,
+        ResponseClass, ResponseMessages,
     };
 
     #[test]
