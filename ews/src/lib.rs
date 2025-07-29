@@ -11,8 +11,7 @@ mod types;
 
 pub use types::*;
 
-// Ensure we have to explicitly import interop to get the trait implementations
-// therein.
+#[cfg(feature = "interop")]
 pub mod interop;
 
 #[derive(Debug, Error)]
