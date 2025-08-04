@@ -9,7 +9,7 @@
 //! traits.
 //!
 //! These are placed in a separate module from the underlying types to
-//! conditioned on a feature to ensure these implementations are opt-in for
+//! condition on a feature to ensure these implementations are opt-in for
 //! library clients.
 
 use crate::{
