@@ -20,32 +20,28 @@ use crate::{
 // Copy/Move item traits.
 
 impl From<CopyMoveItemData> for CopyItem {
-    /// Convert between [`CopyItem`] and [`CopyMoveItemData`] via the
-    /// [`CopyItem::inner`] member.
+    /// Convert via the [`CopyItem::inner`] member.
     fn from(value: CopyMoveItemData) -> Self {
         Self { inner: value }
     }
 }
 
 impl From<CopyItem> for CopyMoveItemData {
-    /// Convert between [`CopyItem`] and [`CopyMoveItemData`] via the
-    /// [`CopyItem::inner`] member.
+    /// Convert via the [`CopyItem::inner`] member.
     fn from(value: CopyItem) -> Self {
         value.inner
     }
 }
 
 impl From<CopyMoveItemData> for MoveItem {
-    /// Convert between [`MoveItem`] and [`CopyMoveItemData`] via the
-    /// [`MoveItem::inner`] member.
+    /// Convert via the [`MoveItem::inner`] member.
     fn from(value: CopyMoveItemData) -> Self {
         Self { inner: value }
     }
 }
 
 impl From<MoveItem> for CopyMoveItemData {
-    /// Convert between [`MoveItem`] and [`CopyMoveItemData`] via the
-    /// [`MoveItem::inner`] member.
+    /// Convert via the [`MoveItem::inner`] member.
     fn from(value: MoveItem) -> Self {
         value.inner
     }
@@ -54,32 +50,28 @@ impl From<MoveItem> for CopyMoveItemData {
 // Copy/Move folder traits.
 
 impl From<CopyMoveFolderData> for CopyFolder {
-    /// Convert between [`CopyFolder`] and [`CopyMoveFolderData`] via the
-    /// [`CopyFolder::inner`] member.
+    /// Convert via the [`CopyFolder::inner`] member.
     fn from(value: CopyMoveFolderData) -> Self {
         Self { inner: value }
     }
 }
 
 impl From<CopyFolder> for CopyMoveFolderData {
-    /// Convert between [`CopyFolder`] and [`CopyMoveFolderData`] via the
-    /// [`CopyFolder::inner`] member.
+    /// Convert via the [`CopyFolder::inner`] member.
     fn from(value: CopyFolder) -> Self {
         value.inner
     }
 }
 
 impl From<CopyMoveFolderData> for MoveFolder {
-    /// Convert between [`MoveFolder`] and [`CopyMoveFolderData`] via the
-    /// [`MoveFolder::inner`] member.
+    /// Convert via the [`MoveFolder::inner`] member.
     fn from(value: CopyMoveFolderData) -> Self {
         Self { inner: value }
     }
 }
 
 impl From<MoveFolder> for CopyMoveFolderData {
-    /// Convert between [`MoveFolder`] and [`CopyMoveFolderData`] via the
-    /// [`MoveFolder::inner`] member.
+    /// Convert via the [`MoveFolder::inner`] member.
     fn from(value: MoveFolder) -> Self {
         value.inner
     }
