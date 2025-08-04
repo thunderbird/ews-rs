@@ -39,10 +39,10 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Build project
-      run: cargo build
+      run: cargo build --all-features
 
     - name: Test project
-      run: cargo test --workspace
+      run: cargo test --all-features --workspace
 
     - name: Run clippy
       uses: giraffate/clippy-action@v1
@@ -55,4 +55,4 @@ jobs:
     - name: Build docs
       env:
         RUSTDOCFLAGS: -D warnings
-      run: cargo doc --no-deps --workspace --document-private-items
+      run: cargo doc --all-features --no-deps --workspace --document-private-items
