@@ -248,6 +248,7 @@ mod tests {
     /// A meaningless struct.
     #[derive(Clone, Debug, XmlSerialize)]
     #[operation_response(Bar)]
+    #[allow(dead_code)]
     struct Foo {}
 
     /// A meaningless struct.
