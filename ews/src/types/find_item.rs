@@ -4,7 +4,7 @@ use xml_struct::XmlSerialize;
 
 use crate::{BaseFolderId, ItemShape, Items, MESSAGES_NS_URI};
 
-/// Defines a request to find items in mailbox
+/// Defines a request to find items in mailbox.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/finditem>
 #[derive(Clone, Debug, XmlSerialize)]
@@ -13,21 +13,30 @@ use crate::{BaseFolderId, ItemShape, Items, MESSAGES_NS_URI};
 pub struct FindItem {
     #[xml_struct(attribute)]
     pub traversal: Traversal,
+
     pub item_shape: ItemShape,
+
     pub parent_folder_ids: Vec<BaseFolderId>,
 }
 
 /// Defines whether the search finds items in folders or the folders' dumpsters.
-/// This attribute is required
+/// This attribute is required.
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(text)]
 pub enum Traversal {
+    /// Returns only the identities of items in the folder.
     Shallow,
+
+    /// Returns only the identities of items that are in a folder's dumpster.
+    /// Note that a soft-deleted traversal combined with a search restriction
+    /// will result in zero items returned even if there are items that match the search criteria.
     SoftDeleted,
+
+    ///Returns only the identities of associated items in the folder.
     Associated,
 }
 
-/// Contains the status and result of a single [`FindItem`] operation request
+/// Contains the status and result of a single [`FindItem`] operation request.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/finditemresponsemessage>
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
@@ -44,8 +53,6 @@ mod tests {
 
     #[test]
     fn test_serialize_find_item() {
-        let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><ParentFolderIds><t:DistinguishedFolderId Id="deleteditems"/></ParentFolderIds></FindItem>"#;
-
         let find_item = FindItem {
             traversal: Traversal::Shallow,
             item_shape: ItemShape {
@@ -58,6 +65,8 @@ mod tests {
                 change_key: None,
             }],
         };
+
+        let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><ParentFolderIds><t:DistinguishedFolderId Id="deleteditems"/></ParentFolderIds></FindItem>"#;
 
         assert_serialized_content(&find_item, "FindItem", expected);
     }
