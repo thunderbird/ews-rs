@@ -6,7 +6,7 @@ use crate::{BaseFolderId, ItemShape, Items, MESSAGES_NS_URI};
 
 /// Defines a request to find items in mailbox
 ///
-/// https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/finditem
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/finditem>
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 #[operation_response(FindItemResponseMessage)]
@@ -29,7 +29,7 @@ pub enum Traversal {
 
 /// Contains the status and result of a single [`FindItem`] operation request
 ///
-/// https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/finditemresponsemessage
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/finditemresponsemessage>
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct FindItemResponseMessage {
