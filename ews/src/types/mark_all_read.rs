@@ -15,11 +15,8 @@ use crate::{BaseFolderId, MESSAGES_NS_URI};
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 #[operation_response(MarkAllItemsAsReadResponseMessage)]
 pub struct MarkAllItemsAsRead {
-    #[xml_struct(ns_prefix = "m")]
     pub read_flag: bool,
-    #[xml_struct(ns_prefix = "m")]
     pub suppress_read_receipts: bool,
-    #[xml_struct(ns_prefix = "m")]
     pub folder_ids: Vec<BaseFolderId>,
 }
 
@@ -28,9 +25,7 @@ pub struct MarkAllItemsAsRead {
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/markallitemsasreadresponsemessage>
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
-pub struct MarkAllItemsAsReadResponseMessage {
-    pub message_text: Option<String>,
-}
+pub struct MarkAllItemsAsReadResponseMessage {}
 
 #[cfg(test)]
 mod test {
@@ -53,7 +48,7 @@ mod test {
             }],
         };
 
-        let expected = r#"<MarkAllItemsAsRead xmlns="http://schemas.microsoft.com/exchange/services/2006/messages"><m:ReadFlag>true</m:ReadFlag><m:SuppressReadReceipts>true</m:SuppressReadReceipts><m:FolderIds><t:FolderId Id="AAMkADEzOTExYZRAAA=" ChangeKey="AQAAAAA3vA=="/></m:FolderIds></MarkAllItemsAsRead>"#;
+        let expected = r#"<MarkAllItemsAsRead xmlns="http://schemas.microsoft.com/exchange/services/2006/messages"><ReadFlag>true</ReadFlag><SuppressReadReceipts>true</SuppressReadReceipts><FolderIds><t:FolderId Id="AAMkADEzOTExYZRAAA=" ChangeKey="AQAAAAA3vA=="/></FolderIds></MarkAllItemsAsRead>"#;
 
         assert_serialized_content(&mark_all_items_as_read, "MarkAllItemsAsRead", expected);
     }
@@ -72,7 +67,7 @@ mod test {
         let response = MarkAllItemsAsReadResponse {
             response_messages: ResponseMessages {
                 response_messages: vec![ResponseClass::Success(
-                    MarkAllItemsAsReadResponseMessage { message_text: None },
+                    MarkAllItemsAsReadResponseMessage {},
                 )],
             },
         };
