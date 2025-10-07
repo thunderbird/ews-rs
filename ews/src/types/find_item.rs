@@ -53,6 +53,27 @@ pub enum View {
         #[xml_struct(attribute)]
         offset: usize,
     },
+
+    /// Describes where the paged view starts and the
+    /// maximum number of items returned in a [`FindItem`] request.
+    FractionalPageItemView {
+        /// Identifies the maximum number of results to return in the FindItem response.
+        /// If this attribute is not specified, the call will return all available items.
+        #[xml_struct(attribute)]
+        max_entries_returned: Option<usize>,
+
+        /// Represents the numerator of the fractional offset from the start of the result set.
+        /// The numerator must be equal to or less than the denominator.
+        /// This attribute must represent an integral value that is equal to or greater than zero.
+        #[xml_struct(attribute)]
+        numerator: usize,
+
+        /// Represents the denominator of the fractional offset from the start
+        /// of the total number of items in the result set.
+        /// This attribute must represent an integral value that is greater than one.
+        #[xml_struct(attribute)]
+        denominator: usize,
+    },
 }
 
 /// Describes whether the page of items or conversations will start from the
@@ -82,7 +103,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_serialize_find_item() {
+    fn test_serialize_find_item_indexed_page_item_view() {
         let find_item = FindItem {
             traversal: Traversal::Shallow,
             item_shape: ItemShape {
@@ -104,5 +125,29 @@ mod tests {
         let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><IndexedPageItemView MaxEntriesReturned="6" BasePoint="Beginning" Offset="0"/><ParentFolderIds><t:DistinguishedFolderId Id="deleteditems"/></ParentFolderIds></FindItem>"#;
 
         assert_serialized_content(&find_item, "FindItem", expected);
+    }
+
+    #[test]
+    fn test_serialize_find_item_fractional_page_item_view() {
+        let finditem = FindItem {
+            traversal: Traversal::Shallow,
+            item_shape: ItemShape {
+                base_shape: BaseShape::IdOnly,
+                include_mime_content: None,
+                additional_properties: None,
+            },
+            parent_folder_ids: vec![BaseFolderId::DistinguishedFolderId {
+                id: "inbox".to_string(),
+                change_key: None,
+            }],
+            view: Some(View::FractionalPageItemView {
+                max_entries_returned: Some(12),
+                numerator: 2,
+                denominator: 3,
+            }),
+        };
+
+        let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><FractionalPageItemView MaxEntriesReturned="12" Numerator="2" Denominator="3"/><ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></ParentFolderIds></FindItem>"#;
+        assert_serialized_content(&finditem, "FindItem", expected);
     }
 }
