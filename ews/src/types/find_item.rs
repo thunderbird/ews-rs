@@ -16,6 +16,9 @@ pub struct FindItem {
 
     pub item_shape: ItemShape,
 
+    #[xml_struct(flatten)]
+    pub view: Option<View>,
+
     pub parent_folder_ids: Vec<BaseFolderId>,
 }
 
@@ -34,6 +37,33 @@ pub enum Traversal {
 
     ///Returns only the identities of associated items in the folder.
     Associated,
+}
+
+#[derive(Clone, Debug, XmlSerialize)]
+pub enum View {
+    /// Describes how paged conversation or item information is
+    /// returned for a [`FindItem`] operation or `FindConversation` operation request.
+    IndexedPageItemView {
+        #[xml_struct(attribute)]
+        max_entries_returned: Option<usize>,
+
+        #[xml_struct(attribute)]
+        base_point: BasePoint,
+
+        #[xml_struct(attribute)]
+        offset: usize,
+    },
+}
+
+/// Describes whether the page of items or conversations will start from the
+/// beginning or the end of the set of items or conversations that are found by using
+/// the search criteria.
+/// Seeking from the end always searches backward.
+#[derive(Clone, Debug, XmlSerialize)]
+#[xml_struct(text)]
+pub enum BasePoint {
+    Beginning,
+    End,
 }
 
 /// Contains the status and result of a single [`FindItem`] operation request.
@@ -64,9 +94,14 @@ mod tests {
                 id: "deleteditems".to_string(),
                 change_key: None,
             }],
+            view: Some(View::IndexedPageItemView {
+                max_entries_returned: Some(6),
+                offset: 0,
+                base_point: BasePoint::Beginning,
+            }),
         };
 
-        let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><ParentFolderIds><t:DistinguishedFolderId Id="deleteditems"/></ParentFolderIds></FindItem>"#;
+        let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><IndexedPageItemView MaxEntriesReturned="6" BasePoint="Beginning" Offset="0"/><ParentFolderIds><t:DistinguishedFolderId Id="deleteditems"/></ParentFolderIds></FindItem>"#;
 
         assert_serialized_content(&find_item, "FindItem", expected);
     }
