@@ -74,6 +74,18 @@ pub enum View {
         #[xml_struct(attribute)]
         denominator: usize,
     },
+
+    CalendarView {
+        /// Describes the maximum number of results to return in the response.
+        #[xml_struct(attribute)]
+        max_entries_returned: Option<usize>,
+
+        #[xml_struct(attribute)]
+        start_date: String,
+
+        #[xml_struct(attribute)]
+        end_date: String,
+    },
 }
 
 /// Describes whether the page of items or conversations will start from the
@@ -148,6 +160,31 @@ mod tests {
         };
 
         let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><FractionalPageItemView MaxEntriesReturned="12" Numerator="2" Denominator="3"/><ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></ParentFolderIds></FindItem>"#;
+        assert_serialized_content(&finditem, "FindItem", expected);
+    }
+
+    #[test]
+    fn test_serialize_find_item_calendar_view() {
+        let finditem = FindItem {
+            traversal: Traversal::Shallow,
+            item_shape: ItemShape {
+                base_shape: BaseShape::IdOnly,
+                include_mime_content: None,
+                additional_properties: None,
+            },
+            parent_folder_ids: vec![BaseFolderId::DistinguishedFolderId {
+                id: "calendar".to_string(),
+                change_key: None,
+            }],
+            view: Some(View::CalendarView {
+                max_entries_returned: Some(2),
+                start_date: "2006-05-18T00:00:00-08:00".to_string(),
+                end_date: "2006-05-19T00:00:00-08:00".to_string(),
+            }),
+        };
+
+        let expected = r#"<FindItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" Traversal="Shallow"><ItemShape><t:BaseShape>IdOnly</t:BaseShape></ItemShape><CalendarView MaxEntriesReturned="2" StartDate="2006-05-18T00:00:00-08:00" EndDate="2006-05-19T00:00:00-08:00"/><ParentFolderIds><t:DistinguishedFolderId Id="calendar"/></ParentFolderIds></FindItem>"#;
+
         assert_serialized_content(&finditem, "FindItem", expected);
     }
 }
