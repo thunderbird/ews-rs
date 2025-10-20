@@ -895,7 +895,7 @@ pub struct Mailbox {
 
     /// The email address for this mailbox. This can be [`None`] in some cases,
     /// e.g. if it designates an automated system account (see
-    /// https://bugzilla.mozilla.org/show_bug.cgi?id=1994719 for an example).
+    /// <https://bugzilla.mozilla.org/show_bug.cgi?id=1994719> for an example).
     #[xml_struct(ns_prefix = "t")]
     pub email_address: Option<String>,
 
