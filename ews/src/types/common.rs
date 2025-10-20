@@ -893,9 +893,11 @@ pub struct Mailbox {
     #[xml_struct(ns_prefix = "t")]
     pub name: Option<String>,
 
-    /// The email address for this mailbox.
+    /// The email address for this mailbox. This can be [`None`] in some cases,
+    /// e.g. if it designates an automated system account (see
+    /// https://bugzilla.mozilla.org/show_bug.cgi?id=1994719 for an example).
     #[xml_struct(ns_prefix = "t")]
-    pub email_address: String,
+    pub email_address: Option<String>,
 
     /// The protocol used in routing to this mailbox.
     ///
@@ -1193,7 +1195,7 @@ mod tests {
         let alice = Recipient {
             mailbox: Mailbox {
                 name: Some("Alice Test".into()),
-                email_address: "alice@test.com".into(),
+                email_address: Some("alice@test.com".into()),
                 routing_type: None,
                 mailbox_type: None,
                 item_id: None,
@@ -1203,7 +1205,7 @@ mod tests {
         let bob = Recipient {
             mailbox: Mailbox {
                 name: Some("Bob Test".into()),
-                email_address: "bob@test.com".into(),
+                email_address: Some("bob@test.com".into()),
                 routing_type: None,
                 mailbox_type: None,
                 item_id: None,
@@ -1243,7 +1245,7 @@ mod tests {
             &Recipient {
                 mailbox: Mailbox {
                     name: Some("Alice Test".into()),
-                    email_address: "alice@test.com".into(),
+                    email_address: Some("alice@test.com".into()),
                     routing_type: None,
                     mailbox_type: None,
                     item_id: None,
@@ -1257,7 +1259,7 @@ mod tests {
             &Recipient {
                 mailbox: Mailbox {
                     name: Some("Bob Test".into()),
-                    email_address: "bob@test.com".into(),
+                    email_address: Some("bob@test.com".into()),
                     routing_type: None,
                     mailbox_type: None,
                     item_id: None,
