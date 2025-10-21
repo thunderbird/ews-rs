@@ -1212,10 +1212,20 @@ mod tests {
             },
         };
 
-        let recipients = ArrayOfRecipients(vec![alice, bob]);
+        let charlie = Recipient {
+            mailbox: Mailbox {
+                name: Some("Charlie Test".into()),
+                email_address: None,
+                routing_type: None,
+                mailbox_type: None,
+                item_id: None,
+            },
+        };
+
+        let recipients = ArrayOfRecipients(vec![alice, bob, charlie]);
 
         // Ensure the structure of the XML document is correct.
-        let expected = "<Recipients><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Bob Test</t:Name><t:EmailAddress>bob@test.com</t:EmailAddress></t:Mailbox></Recipients>";
+        let expected = "<Recipients><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Bob Test</t:Name><t:EmailAddress>bob@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Charlie Test</t:Name></t:Mailbox></Recipients>";
 
         assert_serialized_content(&recipients, "Recipients", expected);
 
@@ -1228,7 +1238,7 @@ mod tests {
     #[test]
     fn deserialize_array_of_recipients() -> Result<(), Error> {
         // The raw XML to deserialize.
-        let xml = "<Recipients><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Bob Test</t:Name><t:EmailAddress>bob@test.com</t:EmailAddress></t:Mailbox></Recipients>";
+        let xml = "<Recipients><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Bob Test</t:Name><t:EmailAddress>bob@test.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:Name>Charlie Test</t:Name></t:Mailbox></Recipients>";
 
         // Deserialize the raw XML, with `serde_path_to_error` to help
         // troubleshoot any issue.
@@ -1237,7 +1247,7 @@ mod tests {
 
         // Ensure we have the right number of recipients in the resulting
         // `ArrayOfRecipients`.
-        assert_eq!(recipients.0.len(), 2);
+        assert_eq!(recipients.0.len(), 3);
 
         // Ensure the first recipient correctly has a name and address.
         assert_eq!(
@@ -1263,6 +1273,19 @@ mod tests {
                     routing_type: None,
                     mailbox_type: None,
                     item_id: None,
+                },
+            }
+        );
+
+        assert_eq!(
+            recipients.get(2).expect("no recipient at index 2"),
+            &Recipient {
+                mailbox: Mailbox {
+                    name: Some("Charlie Test".into()),
+                    email_address: None,
+                    routing_type: None,
+                    mailbox_type: None,
+                    item_id: None
                 },
             }
         );
