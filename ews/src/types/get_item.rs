@@ -33,3 +33,29 @@ pub struct GetItem {
 pub struct GetItemResponseMessage {
     pub items: Items,
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{test_utils::assert_serialized_content, BaseShape};
+
+    use super::*;
+
+    #[test]
+    fn test_serialize_get_item() {
+        let get_item = GetItem {
+            item_shape: ItemShape {
+                base_shape: BaseShape::Default,
+                include_mime_content: Some(true),
+                additional_properties: None,
+            },
+            item_ids: vec![BaseItemId::ItemId {
+                id: "AAAlAF".to_string(),
+                change_key: Some("CQAAAB".to_string()),
+            }],
+        };
+
+        let expected = r#"<GetItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages"><ItemShape><t:BaseShape>Default</t:BaseShape><t:IncludeMimeContent>true</t:IncludeMimeContent></ItemShape><ItemIds><t:ItemId Id="AAAlAF" ChangeKey="CQAAAB"/></ItemIds></GetItem>"#;
+
+        assert_serialized_content(&get_item, "GetItem", expected);
+    }
+}
