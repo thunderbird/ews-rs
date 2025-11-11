@@ -77,7 +77,7 @@ pub struct RootFolder {
 
     pub items: Items,
 
-    pub groups: Groups,
+    pub groups: Option<Groups>,
 }
 
 #[cfg(test)]
@@ -194,7 +194,6 @@ mod tests {
         let xml = r#"
                     <m:RootFolder IndexedPagingOffset="1" NumeratorOffset="1" AbsoluteDenominator="1" IncludesLastItemInRange="true" TotalItemsInView="10">
                         <Items/>
-                        <Groups/>
                     </m:RootFolder>"#;
         let expected = RootFolder {
             indexed_paging_offset: Some(1),
@@ -203,7 +202,7 @@ mod tests {
             total_items_in_view: Some(10),
             includes_last_item_in_range: Some(true),
             items: Items { inner: vec![] },
-            groups: Groups { inner: vec![] },
+            groups: None,
         };
 
         assert_deserialized_content(xml, expected);
@@ -249,7 +248,7 @@ mod tests {
                             })],
                         },
 
-                        groups: Groups { inner: vec![] },
+                        groups: Some(Groups { inner: vec![] }),
                     },
                 })],
             },
