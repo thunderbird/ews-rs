@@ -137,6 +137,7 @@ pub enum PathToElement {
 // support using a nested structure to define an element's attributes, see
 // https://github.com/thunderbird/xml-struct-rs/issues/9
 #[derive(Clone, Debug, Deserialize, XmlSerialize, Eq, PartialEq)]
+#[serde(rename_all = "PascalCase")]
 pub struct ExtendedFieldURI {
     /// A well-known identifier for a property set.
     #[xml_struct(attribute)]
@@ -160,8 +161,9 @@ pub struct ExtendedFieldURI {
     pub property_id: Option<String>,
 
     /// The value type of the desired property.
+    // TODO: This is a *required* field in the ms docs, but we seem to be receiving XML without it?
     #[xml_struct(attribute)]
-    pub property_type: PropertyType,
+    pub property_type: Option<PropertyType>,
 }
 
 /// A well-known MAPI property set identifier.
@@ -804,8 +806,10 @@ pub struct Message {
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedproperty>
 #[allow(non_snake_case)]
 #[derive(Clone, Debug, Deserialize, XmlSerialize, Eq, PartialEq)]
+#[serde(rename_all = "PascalCase")]
 pub struct ExtendedProperty {
     #[xml_struct(ns_prefix = "t")]
+    #[serde(rename = "ExtendedFieldURI")]
     pub extended_field_URI: ExtendedFieldURI,
 
     #[xml_struct(ns_prefix = "t")]
