@@ -1178,6 +1178,99 @@ pub struct InternetMessageHeader {
     pub value: String,
 }
 
+/// View for `FindItem` and `FindConversation` operations
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/indexedpageitemview>
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/fractionalpageitemview>
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/calendarview>
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/contactsview>
+#[derive(Clone, Debug, XmlSerialize)]
+pub enum View {
+    /// Describes how paged conversation or item information is
+    /// returned for a `FindItem` operation or `FindConversation` operation request.
+    IndexedPageItemView {
+        #[xml_struct(attribute)]
+        max_entries_returned: Option<usize>,
+
+        #[xml_struct(attribute)]
+        base_point: BasePoint,
+
+        #[xml_struct(attribute)]
+        offset: usize,
+    },
+
+    /// Describes where the paged view starts and the
+    /// maximum number of items returned in a `FindItem` request.
+    FractionalPageItemView {
+        /// Identifies the maximum number of results to return in the FindItem response.
+        /// If this attribute is not specified, the call will return all available items.
+        #[xml_struct(attribute)]
+        max_entries_returned: Option<usize>,
+
+        /// Represents the numerator of the fractional offset from the start of the result set.
+        /// The numerator must be equal to or less than the denominator.
+        /// This attribute must represent an integral value that is equal to or greater than zero.
+        #[xml_struct(attribute)]
+        numerator: usize,
+
+        /// Represents the denominator of the fractional offset from the start
+        /// of the total number of items in the result set.
+        /// This attribute must represent an integral value that is greater than one.
+        #[xml_struct(attribute)]
+        denominator: usize,
+    },
+
+    CalendarView {
+        /// Describes the maximum number of results to return in the response.
+        #[xml_struct(attribute)]
+        max_entries_returned: Option<usize>,
+
+        #[xml_struct(attribute)]
+        start_date: String,
+
+        #[xml_struct(attribute)]
+        end_date: String,
+    },
+
+    ContactsView {
+        /// Describes the maximum number of results to return in the response.
+        #[xml_struct(attribute)]
+        max_entries_returned: Option<usize>,
+
+        #[xml_struct(attribute)]
+        initial_name: Option<String>,
+
+        #[xml_struct(attribute)]
+        final_name: Option<String>,
+    },
+}
+
+/// Describes whether the page of items or conversations will start from the
+/// beginning or the end of the set of items or conversations that are found by using
+/// the search criteria.
+/// Seeking from the end always searches backward.
+#[derive(Clone, Debug, XmlSerialize)]
+#[xml_struct(text)]
+pub enum BasePoint {
+    Beginning,
+    End,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct Groups {
+    #[serde(rename = "$value", default)]
+    pub inner: Vec<GroupedItems>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct GroupedItems {
+    pub group_index: Option<usize>,
+
+    pub items: Items,
+}
+
 #[cfg(test)]
 mod tests {
 
