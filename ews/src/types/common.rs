@@ -803,6 +803,17 @@ pub struct Message {
     /// This element was introduced in Exchange 2013.
     #[xml_struct(ns_prefix = "t")]
     pub preview: Option<String>,
+
+    /// The flag status of the mailbox item.
+    ///
+    /// This value isn't documented for either the `Item` or `Message`
+    /// interfaces in the Exchange documentation. However, the element itself is
+    /// documented at
+    /// <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/flag>
+    ///
+    /// This element was introduced in Exchange 2013.
+    #[xml_struct(ns_prefix = "t")]
+    pub flag: Option<Flag>,
 }
 
 /// An extended MAPI property of an Exchange item or folder.
@@ -1275,6 +1286,27 @@ pub struct GroupedItems {
     pub group_index: Option<usize>,
 
     pub items: Items,
+}
+
+/// The value of the flag status for an item.
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/flagstatus>
+#[derive(Clone, Debug, XmlSerialize, Deserialize, Eq, PartialEq)]
+#[xml_struct(text)]
+pub enum FlagStatus {
+    NotFlagged,
+    Flagged,
+    Complete,
+}
+
+/// The flag information of the item.
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/flag>
+#[derive(Clone, Debug, XmlSerialize, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+pub struct Flag {
+    pub flag_status: Option<FlagStatus>,
+    pub start_date: Option<String>,
+    pub due_date: Option<String>,
+    pub complete_date: Option<String>,
 }
 
 #[cfg(test)]
