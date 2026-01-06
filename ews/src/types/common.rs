@@ -140,28 +140,35 @@ pub enum PathToElement {
 pub struct ExtendedFieldURI {
     /// A well-known identifier for a property set.
     #[xml_struct(attribute)]
+    #[serde(rename = "@DistinguishedPropertySetId")]
     pub distinguished_property_set_id: Option<DistinguishedPropertySet>,
 
     /// A GUID representing a property set.
     // TODO: This could use a strong type for representing a GUID.
     #[xml_struct(attribute)]
+    #[serde(rename = "@PropertySetId")]
     pub property_set_id: Option<String>,
 
     /// Specifies a property by integer tag.
     #[xml_struct(attribute)]
+    #[serde(rename = "@PropertyTag")]
     pub property_tag: Option<String>,
 
     /// The name of a property within a specified property set.
     #[xml_struct(attribute)]
+    #[serde(rename = "@PropertyTag")]
     pub property_name: Option<String>,
 
     /// The dispatch ID of a property within a specified property set.
     #[xml_struct(attribute)]
+    #[serde(rename = "@PropertyId")]
     pub property_id: Option<String>,
 
     /// The value type of the desired property.
+    // TODO: This is a *required* field in the ms docs, but we seem to be receiving XML without it?
     #[xml_struct(attribute)]
-    pub property_type: PropertyType,
+    #[serde(rename = "@PropertyType")]
+    pub property_type: Option<PropertyType>,
 }
 
 /// A well-known MAPI property set identifier.
@@ -804,8 +811,10 @@ pub struct Message {
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/extendedproperty>
 #[allow(non_snake_case)]
 #[derive(Clone, Debug, Deserialize, XmlSerialize, Eq, PartialEq)]
+#[serde(rename_all = "PascalCase")]
 pub struct ExtendedProperty {
     #[xml_struct(ns_prefix = "t")]
+    #[serde(rename = "ExtendedFieldURI")]
     pub extended_field_URI: ExtendedFieldURI,
 
     #[xml_struct(ns_prefix = "t")]
@@ -1380,6 +1389,33 @@ mod tests {
             }
         );
 
+        Ok(())
+    }
+
+    /// Test that [`ExtendedProperty`] correctly serializes into XML and back again.
+    #[test]
+    fn test_extended_property() -> Result<(), Error> {
+        let data = ExtendedProperty {
+            extended_field_URI: ExtendedFieldURI {
+                distinguished_property_set_id: None,
+                property_set_id: None,
+                property_tag: Some("0x007D".into()),
+                property_name: None,
+                property_id: None,
+                property_type: Some(PropertyType::String),
+            },
+            value: "data goes here".into(),
+        };
+
+        let xml = r#"<ExtendedProperty><t:ExtendedFieldURI PropertyTag="0x007D" PropertyType="String"/><t:Value>data goes here</t:Value></ExtendedProperty>"#;
+
+        // Make sure data serializes into expected XML.
+        assert_serialized_content(&data, "ExtendedProperty", xml);
+
+        // Make sure XML deserializes into expected data.
+        let mut de = quick_xml::de::Deserializer::from_reader(xml.as_bytes());
+        let deserialized: ExtendedProperty = serde_path_to_error::deserialize(&mut de)?;
+        assert_eq!(deserialized, data);
         Ok(())
     }
 }
