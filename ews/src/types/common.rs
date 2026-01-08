@@ -600,24 +600,6 @@ impl RealItem {
     }
 }
 
-/// An item which may appear in an item-based attachment.
-///
-/// See [`Attachment::ItemAttachment`] for details.
-// N.B.: Commented-out variants are not yet implemented.
-#[non_exhaustive]
-#[derive(Clone, Debug, Deserialize)]
-pub enum AttachmentItem {
-    // Item(Item),
-    Message(Message),
-    // CalendarItem(CalendarItem),
-    // Contact(Contact),
-    // Task(Task),
-    // MeetingMessage(MeetingMessage),
-    // MeetingRequest(MeetingRequest),
-    // MeetingResponse(MeetingResponse),
-    // MeetingCancellation(MeetingCancellation),
-}
-
 /// A date and time with second precision.
 // `time` provides an `Option<OffsetDateTime>` deserializer, but it does not
 // work with map fields which may be omitted, as in our case.
@@ -1080,12 +1062,10 @@ pub enum Attachment {
         ///
         /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isinline>
         is_inline: Option<bool>,
-        // XXX: With this field in place, parsing will fail if there is no
-        // `AttachmentItem` in the response.
-        // See https://github.com/tafia/quick-xml/issues/683
-        // /// The attached item.
-        // #[serde(rename = "$value")]
-        // content: Option<AttachmentItem>,
+
+        /// The attached item.
+        #[serde(flatten)]
+        content: Option<Box<RealItem>>,
     },
 
     /// An attachment containing a file.
@@ -1434,5 +1414,83 @@ mod tests {
         let deserialized: ExtendedProperty = serde_path_to_error::deserialize(&mut de)?;
         assert_eq!(deserialized, data);
         Ok(())
+    }
+
+    /// Test that attachments are parsed properly
+    #[test]
+    fn test_attachment_parsing() {
+        let item_attachment_xml = r#"
+<m:Attachments>
+  <t:ItemAttachment>
+    <t:AttachmentId Id="Ktum21o=" />
+    <t:Name>Attached Message Item</t:Name>
+    <t:ContentType>message/rfc822</t:ContentType>
+    <t:Message>
+      <t:ItemId Id="AAMkAd" ChangeKey="FwAAABY" />
+    </t:Message>
+  </t:ItemAttachment>
+</m:Attachments>
+"#;
+
+        let data = Attachments {
+            inner: vec![Attachment::ItemAttachment {
+                attachment_id: AttachmentId {
+                    id: "Ktum21o=".to_string(),
+                    root_item_id: None,
+                    root_item_change_key: None,
+                },
+                name: "Attached Message Item".to_string(),
+                content_type: "message/rfc822".to_string(),
+                content_id: None,
+                content_location: None,
+                size: None,
+                last_modified_time: None,
+                is_inline: None,
+                content: Some(Box::new(RealItem::Message(Message {
+                    item_id: Some(ItemId {
+                        id: "AAMkAd".to_string(),
+                        change_key: Some("FwAAABY".to_string()),
+                    }),
+                    ..Default::default()
+                }))),
+            }],
+        };
+
+        let mut de = quick_xml::de::Deserializer::from_reader(item_attachment_xml.as_bytes());
+        let item_attachments: Attachments = serde_path_to_error::deserialize(&mut de).unwrap();
+        assert_eq!(item_attachments, data);
+
+        let file_attachment_xml = r#"
+<m:Attachments>
+  <t:FileAttachment>
+    <t:AttachmentId Id="AAAtAEFkbWluaX..."/>
+    <t:Name>SomeFile</t:Name>
+    <t:ContentType>message/rfc822</t:ContentType>
+    <t:Content>AQIDBAU=</t:Content>
+  </t:FileAttachment>
+</m:Attachments>
+"#;
+        let data = Attachments {
+            inner: vec![Attachment::FileAttachment {
+                attachment_id: AttachmentId {
+                    id: "AAAtAEFkbWluaX...".to_string(),
+                    root_item_id: None,
+                    root_item_change_key: None,
+                },
+                name: "SomeFile".to_string(),
+                content_type: "message/rfc822".to_string(),
+                content_id: None,
+                content_location: None,
+                size: None,
+                last_modified_time: None,
+                is_inline: None,
+                is_contact_photo: None,
+                content: Some("AQIDBAU=".to_string()),
+            }],
+        };
+
+        let mut de = quick_xml::de::Deserializer::from_reader(file_attachment_xml.as_bytes());
+        let file_attachments: Attachments = serde_path_to_error::deserialize(&mut de).unwrap();
+        assert_eq!(file_attachments, data);
     }
 }
