@@ -549,36 +549,53 @@ pub struct Folders {
 #[xml_struct(variant_ns_prefix = "t")]
 #[non_exhaustive]
 pub enum RealItem {
-    CalendarItem(Message),
+    Item(Message),
     Message(Message),
+    CalendarItem(Message),
+    Contact(Message),
+    DistributionList(Message),
     MeetingMessage(Message),
     MeetingRequest(Message),
     MeetingResponse(Message),
     MeetingCancellation(Message),
+    Task(Message),
+    PostItem(Message),
 }
 
 impl RealItem {
     /// Return the [`Message`] object contained within this [`RealItem`].
     pub fn inner_message(&self) -> &Message {
+        use RealItem::*;
         match self {
-            RealItem::CalendarItem(message)
-            | RealItem::Message(message)
-            | RealItem::MeetingMessage(message)
-            | RealItem::MeetingRequest(message)
-            | RealItem::MeetingResponse(message)
-            | RealItem::MeetingCancellation(message) => message,
+            Item(message)
+            | Message(message)
+            | CalendarItem(message)
+            | Contact(message)
+            | DistributionList(message)
+            | MeetingMessage(message)
+            | MeetingRequest(message)
+            | MeetingResponse(message)
+            | MeetingCancellation(message)
+            | Task(message)
+            | PostItem(message) => message,
         }
     }
 
     /// Take ownership of the inner [`Message`].
     pub fn into_inner_message(self) -> Message {
+        use RealItem::*;
         match self {
-            RealItem::CalendarItem(message)
-            | RealItem::Message(message)
-            | RealItem::MeetingMessage(message)
-            | RealItem::MeetingRequest(message)
-            | RealItem::MeetingResponse(message)
-            | RealItem::MeetingCancellation(message) => message,
+            Item(message)
+            | Message(message)
+            | CalendarItem(message)
+            | Contact(message)
+            | DistributionList(message)
+            | MeetingMessage(message)
+            | MeetingRequest(message)
+            | MeetingResponse(message)
+            | MeetingCancellation(message)
+            | Task(message)
+            | PostItem(message) => message,
         }
     }
 }
