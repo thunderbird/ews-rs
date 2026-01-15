@@ -8,7 +8,6 @@ interop = []
 
 [dependencies]
 ews_proc_macros = { path = "../ews_proc_macros" }
-log = { version = "0.4.21", features = ["std"] }
 quick-xml = { version = "0.31.0", features = ["serde", "serialize"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_path_to_error = "0.1.11"
