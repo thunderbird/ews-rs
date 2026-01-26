@@ -1313,7 +1313,10 @@ pub struct Flag {
 mod tests {
 
     use super::*;
-    use crate::{test_utils::assert_serialized_content, Error};
+    use crate::{
+        test_utils::{assert_deserialized_content, assert_serialized_content},
+        Error,
+    };
 
     /// Tests that an [`ArrayOfRecipients`] correctly serializes into XML. It
     /// should serialize as multiple `<t:Mailbox>` elements, one per [`Recipient`].
@@ -1524,5 +1527,45 @@ mod tests {
         let mut de = quick_xml::de::Deserializer::from_reader(file_attachment_xml.as_bytes());
         let file_attachments: Attachments = serde_path_to_error::deserialize(&mut de).unwrap();
         assert_eq!(file_attachments, data);
+    }
+
+    #[test]
+    fn test_serialize_flag_status() {
+        let message = Message {
+            flag: Some(Flag {
+                flag_status: Some(FlagStatus::Flagged),
+                start_date: None,
+                due_date: None,
+                complete_date: None,
+            }),
+            ..Default::default()
+        };
+
+        let expected = r#"<Message><t:Flag><FlagStatus>Flagged</FlagStatus></t:Flag></Message>"#;
+
+        assert_serialized_content(&message, "Message", expected);
+    }
+
+    #[test]
+    fn test_deserialize_flag_status() {
+        let content = r#"<t:Message>
+                <t:Flag>
+                    <t:FlagStatus>Flagged</t:FlagStatus>
+                    <t:StartDate>2026-01-26T23:00:00Z</t:StartDate>
+                    <t:DueDate>2026-01-26T23:00:00Z</t:DueDate>
+                </t:Flag>
+            </t:Message>"#;
+
+        let expected = Message {
+            flag: Some(Flag {
+                flag_status: Some(FlagStatus::Flagged),
+                start_date: Some("2026-01-26T23:00:00Z".to_string()),
+                due_date: Some("2026-01-26T23:00:00Z".to_string()),
+                complete_date: None,
+            }),
+            ..Default::default()
+        };
+
+        assert_deserialized_content(content, expected);
     }
 }
