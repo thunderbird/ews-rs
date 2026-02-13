@@ -13,4 +13,4 @@ serde = { version = "1.0.196", features = ["derive"] }
 serde_path_to_error = "0.1.11"
 thiserror = "1.0.57"
 time = { version = "0.3.36", features = ["formatting", "parsing", "serde"] }
-xml_struct = { git = "https://github.com/thunderbird/xml-struct-rs.git", rev = "5b42f8d0d262bad2c2ff697d5a229b5187625022", version = "0.1.0" }
+xml_struct = { git = "https://github.com/thunderbird/xml-struct-rs.git", rev = "9ebff0dfc395f417bef0e7dca9b1fceb25cea2e3", version = "0.1.0" }
