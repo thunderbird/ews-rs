@@ -191,7 +191,7 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 [[package]]
 name = "xml_struct"
 version = "0.1.0"
-source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=5b42f8d0d262bad2c2ff697d5a229b5187625022#5b42f8d0d262bad2c2ff697d5a229b5187625022"
+source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=b010f262a2a7ad4ad8033096de3f0c599a448b97#b010f262a2a7ad4ad8033096de3f0c599a448b97"
 dependencies = [
  "anyhow",
  "quick-xml",
@@ -202,7 +202,7 @@ dependencies = [
 [[package]]
 name = "xml_struct_derive"
 version = "0.1.0"
-source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=5b42f8d0d262bad2c2ff697d5a229b5187625022#5b42f8d0d262bad2c2ff697d5a229b5187625022"
+source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=b010f262a2a7ad4ad8033096de3f0c599a448b97#b010f262a2a7ad4ad8033096de3f0c599a448b97"
 dependencies = [
  "proc-macro2",
  "quote",
