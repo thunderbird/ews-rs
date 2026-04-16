@@ -5,7 +5,7 @@ edition = "2021"
 description = "Data structures and operations relating to the Exchange Web Services API."
 categories = ["data-structures"]
 keywords = ["exchange", "ews", "exchange web services"]
-readme = "README.md"
+readme = "../README.md"
 license = "MPL-2.0"
 repository = "https://github.com/thunderbird/ews-rs"
 exclude = [".github", ".vscode"]
@@ -14,7 +14,7 @@ exclude = [".github", ".vscode"]
 interop = []
 
 [dependencies]
-ews_proc_macros = { path = "../ews_proc_macros" }
+ews_proc_macros = { version = "0.1.0", path = "../ews_proc_macros" }
 quick-xml = { version = "0.31.0", features = ["serde", "serialize"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_path_to_error = "0.1.11"
