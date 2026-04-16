@@ -14,7 +14,7 @@ exclude = [".github", ".vscode"]
 interop = []
 
 [dependencies]
-ews_proc_macros = { version = "0.1.0", path = "../ews_proc_macros" }
+ews_proc_macros = "0.1.0"
 quick-xml = { version = "0.31.0", features = ["serde", "serialize"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_path_to_error = "0.1.11"

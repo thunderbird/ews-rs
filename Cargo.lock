@@ -22,7 +22,7 @@ dependencies = [
 name = "ews"
 version = "0.1.0"
 dependencies = [
- "ews_proc_macros",
+ "ews_proc_macros 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quick-xml",
  "serde",
  "serde_path_to_error",
@@ -34,6 +34,16 @@ dependencies = [
 [[package]]
 name = "ews_proc_macros"
 version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ews_proc_macros"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e74a07e9809826ddfdd105cc32fbab30ca2a68d56406c7d1ab65e7e5ba666ab7"
 dependencies = [
  "quote",
  "syn",
