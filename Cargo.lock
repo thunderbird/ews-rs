@@ -190,8 +190,9 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "xml_struct"
-version = "0.1.0"
-source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=9ebff0dfc395f417bef0e7dca9b1fceb25cea2e3#9ebff0dfc395f417bef0e7dca9b1fceb25cea2e3"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "746ddda2602e8f9c27a628a8e7ce12c1b5048de5e2a3f0d1509ad7ae46dd8c4f"
 dependencies = [
  "anyhow",
  "quick-xml",
@@ -201,8 +202,9 @@ dependencies = [
 
 [[package]]
 name = "xml_struct_derive"
-version = "0.1.0"
-source = "git+https://github.com/thunderbird/xml-struct-rs.git?rev=9ebff0dfc395f417bef0e7dca9b1fceb25cea2e3#9ebff0dfc395f417bef0e7dca9b1fceb25cea2e3"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61cd690908caaece5c3593bf67665d653087209a0a758d318fca92f61dc4656d"
 dependencies = [
  "proc-macro2",
  "quote",

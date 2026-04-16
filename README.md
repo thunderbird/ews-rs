@@ -1,21 +1,13 @@
 # Exchange Web Services
 
-This rust crate holds types that represent data structures and operations for
+This Rust crate holds types that represent data structures and operations for
 the [Exchange Web Services
 API](https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/ews-reference-for-exchange),
 as well as the necessary infrastructure to serialize and deserialize them
-to/from XML.
-
-## Documentation
-
-The Cargo documentation for this repository is not currently hosted online. It
-can be accessed locally after cloning this repository and generating it:
-
-```bash
-git clone https://github.com/thunderbird/ews-rs.git
-cd ews-rs
-cargo doc --open
-```
+to/from XML. It is primarily written and maintained to support Thunderbird's
+[native Exchange
+support](https://blog.thunderbird.net/2025/11/thunderbird-adds-native-microsoft-exchange-email-support),
+but should be generic enough for use in other projects.
 
 ## Report issues
 
