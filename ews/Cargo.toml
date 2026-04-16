@@ -2,7 +2,6 @@
 name = "ews"
 version = "0.1.0"
 edition = "2021"
-authors = ["The Thunderbird Project Developers"]
 description = "Data structures and operations relating to the Exchange Web Services API."
 categories = ["data-structures"]
 keywords = ["exchange", "ews", "exchange web services"]
