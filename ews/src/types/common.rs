@@ -4,8 +4,9 @@
 
 use std::ops::{Deref, DerefMut};
 
-use serde::{Deserialize, Deserializer};
+use serde::{de, Deserialize, Deserializer};
 use time::format_description::well_known::Iso8601;
+use time::{OffsetDateTime, PrimitiveDateTime};
 use xml_struct::XmlSerialize;
 
 pub mod response;
@@ -603,12 +604,40 @@ impl RealItem {
 /// A date and time with second precision.
 // `time` provides an `Option<OffsetDateTime>` deserializer, but it does not
 // work with map fields which may be omitted, as in our case.
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
-pub struct DateTime(#[serde(with = "time::serde::iso8601")] pub time::OffsetDateTime);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DateTime {
+    /// A date and time with a specific time zone.
+    WithTimeZone(OffsetDateTime),
+    /// A date and time without a specific time zone, which must therefore be
+    /// interpreted according to the respective rows of the "dateTime with no
+    /// time zone" column of the [EWS time zone
+    /// table](https://learn.microsoft.com/en-us/exchange/client-developer/exchange-web-services/time-zones-and-ews-in-exchange).
+    NoTimeZone(PrimitiveDateTime),
+}
+
+// We have to use a manual implementation because deriving from untagged enums
+// doesn't work with quick_xml.
+impl<'de> Deserialize<'de> for DateTime {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        if let Ok(date_time) = OffsetDateTime::parse(&value, &Iso8601::DEFAULT) {
+            return Ok(Self::WithTimeZone(date_time));
+        }
+
+        PrimitiveDateTime::parse(&value, &Iso8601::DEFAULT)
+            .map(Self::NoTimeZone)
+            .map_err(de::Error::custom)
+    }
+}
 
 impl XmlSerialize for DateTime {
     /// Serializes a `DateTime` as an XML text content node by formatting the
-    /// inner [`time::OffsetDateTime`] as an ISO 8601-compliant string.
+    /// inner [`time::OffsetDateTime`] or [`time::PrimitiveDateTime`] as an ISO
+    /// 8601-compliant string.
     fn serialize_child_nodes<W>(
         &self,
         writer: &mut quick_xml::Writer<W>,
@@ -616,10 +645,14 @@ impl XmlSerialize for DateTime {
     where
         W: std::io::Write,
     {
-        let time = self
-            .0
-            .format(&Iso8601::DEFAULT)
-            .map_err(|err| xml_struct::Error::Value(err.into()))?;
+        let time = match self {
+            Self::WithTimeZone(t) => t
+                .format(&Iso8601::DEFAULT)
+                .map_err(|err| xml_struct::Error::Value(err.into()))?,
+            Self::NoTimeZone(t) => t
+                .format(&Iso8601::DEFAULT)
+                .map_err(|err| xml_struct::Error::Value(err.into()))?,
+        };
 
         time.serialize_child_nodes(writer)
     }
@@ -1445,9 +1478,7 @@ mod tests {
         assert_serialized_content(&data, "ExtendedProperty", xml);
 
         // Make sure XML deserializes into expected data.
-        let mut de = quick_xml::de::Deserializer::from_reader(xml.as_bytes());
-        let deserialized: ExtendedProperty = serde_path_to_error::deserialize(&mut de)?;
-        assert_eq!(deserialized, data);
+        assert_deserialized_content(xml, data);
         Ok(())
     }
 
@@ -1491,9 +1522,7 @@ mod tests {
             }],
         };
 
-        let mut de = quick_xml::de::Deserializer::from_reader(item_attachment_xml.as_bytes());
-        let item_attachments: Attachments = serde_path_to_error::deserialize(&mut de).unwrap();
-        assert_eq!(item_attachments, data);
+        assert_deserialized_content(item_attachment_xml, data);
 
         let file_attachment_xml = r#"
 <m:Attachments>
@@ -1502,6 +1531,7 @@ mod tests {
     <t:Name>SomeFile</t:Name>
     <t:ContentType>message/rfc822</t:ContentType>
     <t:Content>AQIDBAU=</t:Content>
+    <t:LastModifiedTime>2026-06-26T17:54:39Z</t:LastModifiedTime>
   </t:FileAttachment>
 </m:Attachments>
 "#;
@@ -1517,16 +1547,32 @@ mod tests {
                 content_id: None,
                 content_location: None,
                 size: None,
-                last_modified_time: None,
+                last_modified_time: Some(DateTime::WithTimeZone(
+                    OffsetDateTime::parse("2026-06-26T17:54:39Z", &Iso8601::DEFAULT).unwrap(),
+                )),
                 is_inline: None,
                 is_contact_photo: None,
                 content: Some("AQIDBAU=".to_string()),
             }],
         };
 
-        let mut de = quick_xml::de::Deserializer::from_reader(file_attachment_xml.as_bytes());
-        let file_attachments: Attachments = serde_path_to_error::deserialize(&mut de).unwrap();
-        assert_eq!(file_attachments, data);
+        assert_deserialized_content(file_attachment_xml, data);
+    }
+
+    #[test]
+    fn test_deserialize_date_time_without_time_zone() {
+        let content = r#"<t:Message>
+                <t:DateTimeReceived>2026-06-26T17:54:39</t:DateTimeReceived>
+            </t:Message>"#;
+
+        let expected = Message {
+            date_time_received: Some(DateTime::NoTimeZone(
+                PrimitiveDateTime::parse("2026-06-26T17:54:39", &Iso8601::DEFAULT).unwrap(),
+            )),
+            ..Default::default()
+        };
+
+        assert_deserialized_content(content, expected);
     }
 
     #[test]
