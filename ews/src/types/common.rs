@@ -605,18 +605,12 @@ impl RealItem {
 // `time` provides an `Option<OffsetDateTime>` deserializer, but it does not
 // work with map fields which may be omitted, as in our case.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum DateTime {
-    /// A date and time with a specific time zone.
-    WithTimeZone(OffsetDateTime),
-    /// A date and time without a specific time zone, which must therefore be
-    /// interpreted according to the respective rows of the "dateTime with no
-    /// time zone" column of the [EWS time zone
-    /// table](https://learn.microsoft.com/en-us/exchange/client-developer/exchange-web-services/time-zones-and-ews-in-exchange).
-    NoTimeZone(PrimitiveDateTime),
-}
+pub struct DateTime(pub OffsetDateTime);
 
-// We have to use a manual implementation because deriving from untagged enums
-// doesn't work with quick_xml.
+// While the docs say "Exchange will always include a time zone (either UTC or a
+// specific time zone) in the value", there appears to be a bug where
+// attachments will sometimes return a `LastModifiedTime` without a timezone.
+// This custom deserializer adds a fallback to parse such strings as UTC.
 impl<'de> Deserialize<'de> for DateTime {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -625,19 +619,18 @@ impl<'de> Deserialize<'de> for DateTime {
         let value = String::deserialize(deserializer)?;
 
         if let Ok(date_time) = OffsetDateTime::parse(&value, &Iso8601::DEFAULT) {
-            return Ok(Self::WithTimeZone(date_time));
+            Ok(Self(date_time))
+        } else {
+            PrimitiveDateTime::parse(&value, &Iso8601::DEFAULT)
+                .map(|date_time| Self(date_time.assume_utc()))
+                .map_err(de::Error::custom)
         }
-
-        PrimitiveDateTime::parse(&value, &Iso8601::DEFAULT)
-            .map(Self::NoTimeZone)
-            .map_err(de::Error::custom)
     }
 }
 
 impl XmlSerialize for DateTime {
     /// Serializes a `DateTime` as an XML text content node by formatting the
-    /// inner [`time::OffsetDateTime`] or [`time::PrimitiveDateTime`] as an ISO
-    /// 8601-compliant string.
+    /// inner [`time::OffsetDateTime`] as an ISO 8601-compliant string.
     fn serialize_child_nodes<W>(
         &self,
         writer: &mut quick_xml::Writer<W>,
@@ -645,14 +638,10 @@ impl XmlSerialize for DateTime {
     where
         W: std::io::Write,
     {
-        let time = match self {
-            Self::WithTimeZone(t) => t
-                .format(&Iso8601::DEFAULT)
-                .map_err(|err| xml_struct::Error::Value(err.into()))?,
-            Self::NoTimeZone(t) => t
-                .format(&Iso8601::DEFAULT)
-                .map_err(|err| xml_struct::Error::Value(err.into()))?,
-        };
+        let time = self
+            .0
+            .format(&Iso8601::DEFAULT)
+            .map_err(|err| xml_struct::Error::Value(err.into()))?;
 
         time.serialize_child_nodes(writer)
     }
@@ -1547,7 +1536,7 @@ mod tests {
                 content_id: None,
                 content_location: None,
                 size: None,
-                last_modified_time: Some(DateTime::WithTimeZone(
+                last_modified_time: Some(DateTime(
                     OffsetDateTime::parse("2026-06-26T17:54:39Z", &Iso8601::DEFAULT).unwrap(),
                 )),
                 is_inline: None,
@@ -1560,14 +1549,15 @@ mod tests {
     }
 
     #[test]
+    /// Attachments sometimes have a `last_modified_time` without a timezone.
     fn test_deserialize_date_time_without_time_zone() {
         let content = r#"<t:Message>
                 <t:DateTimeReceived>2026-06-26T17:54:39</t:DateTimeReceived>
             </t:Message>"#;
 
         let expected = Message {
-            date_time_received: Some(DateTime::NoTimeZone(
-                PrimitiveDateTime::parse("2026-06-26T17:54:39", &Iso8601::DEFAULT).unwrap(),
+            date_time_received: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T17:54:39Z", &Iso8601::DEFAULT).unwrap(),
             )),
             ..Default::default()
         };
