@@ -324,7 +324,50 @@ pub enum BaseFolderId {
 
         #[xml_struct(attribute)]
         change_key: Option<String>,
+
+        /// The mailbox that owns this distinguished folder.
+        ///
+        /// Required when referencing a distinguished folder in a mailbox
+        /// other than the one associated with the account making the
+        /// request, e.g. a shared or resource mailbox.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/distinguishedfolderid>.
+        #[xml_struct(ns_prefix = "t")]
+        mailbox: Option<Mailbox>,
     },
+}
+
+impl BaseFolderId {
+    /// Creates a [`BaseFolderId::FolderId`] referencing an arbitrary folder
+    /// by its identifier.
+    pub fn new_folder(id: impl Into<String>) -> Self {
+        BaseFolderId::FolderId {
+            id: id.into(),
+            change_key: None,
+        }
+    }
+
+    /// Creates a [`BaseFolderId::DistinguishedFolderId`] referencing a
+    /// well-known folder (e.g. `"calendar"` or `"inbox"`) in the requesting
+    /// account's own mailbox.
+    pub fn new_distinguished(id: impl Into<String>) -> Self {
+        BaseFolderId::DistinguishedFolderId {
+            id: id.into(),
+            change_key: None,
+            mailbox: None,
+        }
+    }
+
+    /// Creates a [`BaseFolderId::DistinguishedFolderId`] referencing a
+    /// well-known folder in another mailbox, e.g. a shared or resource
+    /// mailbox, identified by `mailbox`.
+    pub fn new_distinguished_in_mailbox(id: impl Into<String>, mailbox: Mailbox) -> Self {
+        BaseFolderId::DistinguishedFolderId {
+            id: id.into(),
+            change_key: None,
+            mailbox: Some(mailbox),
+        }
+    }
 }
 
 /// The unique identifier of a folder.
@@ -836,6 +879,98 @@ pub struct Message {
     /// This element was introduced in Exchange 2013.
     #[xml_struct(ns_prefix = "t")]
     pub flag: Option<Flag>,
+
+    /// The start time of a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/start>
+    #[xml_struct(ns_prefix = "t")]
+    pub start: Option<DateTime>,
+
+    /// The end time of a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/end>
+    #[xml_struct(ns_prefix = "t")]
+    pub end: Option<DateTime>,
+
+    /// The location of a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/location>
+    #[xml_struct(ns_prefix = "t")]
+    pub location: Option<String>,
+
+    /// Whether a calendar item lasts all day.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isalldayevent>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_all_day_event: Option<bool>,
+
+    /// Whether a calendar item has been cancelled by its organizer.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/iscancelled>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_cancelled: Option<bool>,
+
+    /// Whether a calendar item is a meeting (i.e. has attendees other than
+    /// its organizer).
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/ismeeting>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_meeting: Option<bool>,
+
+    /// Whether a calendar item is recurring.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isrecurring>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_recurring: Option<bool>,
+
+    /// The free/busy status to publish for a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/legacyfreebusystatus>
+    #[xml_struct(ns_prefix = "t")]
+    pub legacy_free_busy_status: Option<String>,
+
+    /// The organizer of a calendar item or meeting request.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/organizer>
+    #[xml_struct(ns_prefix = "t")]
+    pub organizer: Option<Recipient>,
+
+    /// The attendees required to attend a calendar item or meeting request.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/requiredattendees>
+    #[xml_struct(ns_prefix = "t")]
+    pub required_attendees: Option<ArrayOfAttendees>,
+
+    /// The attendees optionally invited to a calendar item or meeting request.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/optionalattendees>
+    #[xml_struct(ns_prefix = "t")]
+    pub optional_attendees: Option<ArrayOfAttendees>,
+
+    /// The resources (e.g. meeting rooms or equipment) booked for a calendar
+    /// item or meeting request.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/resources>
+    #[xml_struct(ns_prefix = "t")]
+    pub resources: Option<ArrayOfAttendees>,
+
+    /// The state of a calendar item, represented as a bitmask.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appointmentstate>
+    #[xml_struct(ns_prefix = "t")]
+    pub appointment_state: Option<usize>,
+
+    /// Whether a calendar item is an online meeting.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isonlinemeeting>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_online_meeting: Option<bool>,
+
+    /// Whether the user requesting the calendar item is the organizer.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isorganizer>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_organizer: Option<bool>,
 }
 
 /// An extended MAPI property of an Exchange item or folder.
@@ -918,6 +1053,85 @@ where
         .into_iter()
         .map(|mailbox| Recipient { mailbox })
         .collect())
+}
+
+/// A single attendee of a calendar item or meeting request, or a resource
+/// (e.g. a meeting room) booked for one.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attendee>
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct Attendee {
+    #[xml_struct(ns_prefix = "t")]
+    pub mailbox: Mailbox,
+
+    /// The attendee's response to a meeting request.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/responsetype>
+    #[xml_struct(ns_prefix = "t")]
+    pub response_type: Option<String>,
+
+    /// The date and time at which this attendee last responded to a meeting
+    /// request.
+    #[xml_struct(ns_prefix = "t")]
+    pub last_response_time: Option<DateTime>,
+}
+
+/// A newtype around a vector of `Attendee`s, that is deserialized using
+/// `deserialize_attendees`.
+///
+/// Unlike [`ArrayOfRecipients`], each entry is wrapped in its own `Attendee`
+/// element, per the EWS schema for `RequiredAttendees`/`OptionalAttendees`/
+/// `Resources`. Since the derived `XmlSerialize` impl for `Vec<T>` never
+/// writes a wrapper element around its items.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
+pub struct ArrayOfAttendees(
+    #[serde(deserialize_with = "deserialize_attendees")] pub Vec<Attendee>,
+);
+
+impl Deref for ArrayOfAttendees {
+    type Target = Vec<Attendee>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ArrayOfAttendees {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl XmlSerialize for ArrayOfAttendees {
+    fn serialize_child_nodes<W>(&self, writer: &mut quick_xml::Writer<W>) -> Result<(), xml_struct::Error>
+    where
+        W: std::io::Write,
+    {
+        for attendee in &self.0 {
+            attendee.serialize_as_element(writer, "t:Attendee")?;
+        }
+
+        Ok(())
+    }
+}
+
+/// Deserializes a list of attendees.
+///
+/// See [`deserialize_recipients`] for why this intermediate type is needed.
+fn deserialize_attendees<'de, D>(deserializer: D) -> Result<Vec<Attendee>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Clone, Debug, Deserialize)]
+    #[serde(rename_all = "PascalCase")]
+    struct AttendeeSequence {
+        attendee: Vec<Attendee>,
+    }
+
+    let seq = AttendeeSequence::deserialize(deserializer)?;
+
+    Ok(seq.attendee)
 }
 
 /// A list of Internet Message Format headers.
@@ -1392,6 +1606,58 @@ mod tests {
         Ok(())
     }
 
+    /// Tests that an [`ArrayOfAttendees`] correctly serializes into XML and
+    /// back again. There should be a 1-to-1 correspondence between
+    /// `<t:Attendee>` elements and [`Attendee`]s.
+    #[test]
+    fn test_array_of_attendees() -> Result<(), Error> {
+        let xml = minify_xml(
+            r#"
+            <RequiredAttendees>
+              <t:Attendee>
+                <t:Mailbox>
+                  <t:Name>Alice Test</t:Name>
+                  <t:EmailAddress>alice@test.com</t:EmailAddress>
+                </t:Mailbox>
+                <t:ResponseType>Accept</t:ResponseType>
+              </t:Attendee>
+              <t:Attendee>
+                <t:Mailbox>
+                  <t:Name>Room 1</t:Name>
+                  <t:EmailAddress>room1@test.com</t:EmailAddress>
+                </t:Mailbox>
+              </t:Attendee>
+            </RequiredAttendees>"#,
+        );
+
+        let data = ArrayOfAttendees(vec![
+            Attendee {
+                mailbox: Mailbox {
+                    name: Some("Alice Test".into()),
+                    email_address: Some("alice@test.com".into()),
+                    ..Default::default()
+                },
+                response_type: Some("Accept".into()),
+                last_response_time: None,
+            },
+            Attendee {
+                mailbox: Mailbox {
+                    name: Some("Room 1".into()),
+                    email_address: Some("room1@test.com".into()),
+                    ..Default::default()
+                },
+                response_type: None,
+                last_response_time: None,
+            },
+        ]);
+
+        assert_serialized_content(&data, "RequiredAttendees", &xml);
+
+        assert_deserialized_content(&xml, data);
+
+        Ok(())
+    }
+
     /// Test that [`ExtendedProperty`] correctly serializes into XML and back again.
     #[test]
     fn test_extended_property() -> Result<(), Error> {
@@ -1551,6 +1817,91 @@ mod tests {
                 due_date: Some("2026-01-26T23:00:00Z".to_string()),
                 complete_date: None,
             }),
+            ..Default::default()
+        };
+
+        assert_deserialized_content(content, expected);
+    }
+
+    #[test]
+    fn test_serialize_message_calendar_fields() {
+        let message = Message {
+            start: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T17:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            end: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T18:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            location: Some("Room 42".to_string()),
+            is_all_day_event: Some(false),
+            is_cancelled: Some(false),
+            is_meeting: Some(true),
+            is_recurring: Some(false),
+            legacy_free_busy_status: Some("Busy".to_string()),
+            organizer: Some(Recipient {
+                mailbox: Mailbox {
+                    name: Some("Alice Test".to_string()),
+                    email_address: Some("alice@test.com".to_string()),
+                    ..Default::default()
+                },
+            }),
+            appointment_state: Some(1),
+            is_online_meeting: Some(false),
+            is_organizer: Some(true),
+            ..Default::default()
+        };
+
+        let expected = r#"<Message><t:Start>2026-06-26T17:54:39.000000000Z</t:Start><t:End>2026-06-26T18:54:39.000000000Z</t:End><t:Location>Room 42</t:Location><t:IsAllDayEvent>false</t:IsAllDayEvent><t:IsCancelled>false</t:IsCancelled><t:IsMeeting>true</t:IsMeeting><t:IsRecurring>false</t:IsRecurring><t:LegacyFreeBusyStatus>Busy</t:LegacyFreeBusyStatus><t:Organizer><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox></t:Organizer><t:AppointmentState>1</t:AppointmentState><t:IsOnlineMeeting>false</t:IsOnlineMeeting><t:IsOrganizer>true</t:IsOrganizer></Message>"#;
+
+        assert_serialized_content(&message, "Message", expected);
+    }
+
+    #[test]
+    fn test_deserialize_message_calendar_fields() {
+        let content = r#"
+            <t:Message>
+              <t:Start>2026-06-26T17:54:39Z</t:Start>
+              <t:End>2026-06-26T18:54:39Z</t:End>
+              <t:Location>Room 42</t:Location>
+              <t:IsAllDayEvent>false</t:IsAllDayEvent>
+              <t:IsCancelled>false</t:IsCancelled>
+              <t:IsMeeting>true</t:IsMeeting>
+              <t:IsRecurring>false</t:IsRecurring>
+              <t:LegacyFreeBusyStatus>Busy</t:LegacyFreeBusyStatus>
+              <t:Organizer>
+                <t:Mailbox>
+                  <t:Name>Alice Test</t:Name>
+                  <t:EmailAddress>alice@test.com</t:EmailAddress>
+                </t:Mailbox>
+              </t:Organizer>
+              <t:AppointmentState>1</t:AppointmentState>
+              <t:IsOnlineMeeting>false</t:IsOnlineMeeting>
+              <t:IsOrganizer>true</t:IsOrganizer>
+            </t:Message>"#;
+
+        let expected = Message {
+            start: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T17:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            end: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T18:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            location: Some("Room 42".to_string()),
+            is_all_day_event: Some(false),
+            is_cancelled: Some(false),
+            is_meeting: Some(true),
+            is_recurring: Some(false),
+            legacy_free_busy_status: Some("Busy".to_string()),
+            organizer: Some(Recipient {
+                mailbox: Mailbox {
+                    name: Some("Alice Test".to_string()),
+                    email_address: Some("alice@test.com".to_string()),
+                    ..Default::default()
+                },
+            }),
+            appointment_state: Some(1),
+            is_online_meeting: Some(false),
+            is_organizer: Some(true),
             ..Default::default()
         };
 
