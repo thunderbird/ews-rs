@@ -5,7 +5,10 @@
 use ews_proc_macros::operation_response;
 use xml_struct::XmlSerialize;
 
-use crate::{BaseFolderId, ItemResponseMessage, MessageDisposition, RealItem, MESSAGES_NS_URI};
+use crate::{
+    BaseFolderId, ItemResponseMessage, MessageDisposition, RealItem, SendMeetingInvitations,
+    MESSAGES_NS_URI,
+};
 
 /// A request to create (and optionally send) one or more Exchange items.
 ///
@@ -24,6 +27,14 @@ pub struct CreateItem {
     #[xml_struct(attribute)]
     pub message_disposition: Option<MessageDisposition>,
 
+    /// Whether/how meeting invitations are sent to attendees.
+    ///
+    /// This field is required for and only applicable to calendar items.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#sendmeetinginvitations-attribute>
+    #[xml_struct(attribute)]
+    pub send_meeting_invitations: Option<SendMeetingInvitations>,
+
     /// The folder in which to store an item once it has been created.
     ///
     /// This is ignored if `message_disposition` is [`SendOnly`].
@@ -40,11 +51,56 @@ pub struct CreateItem {
 #[cfg(test)]
 mod test {
     use crate::{
-        test_utils::assert_deserialized_content, types::common::ItemResponseMessage, Items,
-        ResponseClass, ResponseMessages,
+        test_utils::{assert_deserialized_content, assert_serialized_content, minify_xml},
+        types::common::ItemResponseMessage,
+        BaseFolderId, Items, Message, MessageDisposition, RealItem, ResponseClass,
+        ResponseMessages, SendMeetingInvitations,
     };
 
-    use super::CreateItemResponse;
+    use super::{CreateItem, CreateItemResponse};
+
+    #[test]
+    fn test_serialize_create_item_send_meeting_invitations() {
+        let request = CreateItem {
+            message_disposition: None,
+            send_meeting_invitations: Some(SendMeetingInvitations::SendToAllAndSaveCopy),
+            saved_item_folder_id: Some(BaseFolderId::new_distinguished("calendar")),
+            items: vec![RealItem::CalendarItem(Message::default())],
+        };
+
+        let expected = minify_xml(
+            r#"
+            <CreateItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" SendMeetingInvitations="SendToAllAndSaveCopy">
+              <SavedItemFolderId>
+                <t:DistinguishedFolderId Id="calendar"></t:DistinguishedFolderId>
+              </SavedItemFolderId>
+              <Items>
+                <t:CalendarItem></t:CalendarItem>
+              </Items>
+            </CreateItem>"#,
+        );
+
+        assert_serialized_content(&request, "CreateItem", &expected);
+    }
+
+    #[test]
+    fn test_serialize_create_item_message_disposition() {
+        let request = CreateItem {
+            message_disposition: Some(MessageDisposition::SendAndSaveCopy),
+            send_meeting_invitations: None,
+            saved_item_folder_id: None,
+            items: vec![],
+        };
+
+        let expected = minify_xml(
+            r#"
+            <CreateItem xmlns="http://schemas.microsoft.com/exchange/services/2006/messages" MessageDisposition="SendAndSaveCopy">
+              <Items></Items>
+            </CreateItem>"#,
+        );
+
+        assert_serialized_content(&request, "CreateItem", &expected);
+    }
 
     #[test]
     fn test_deserialize_create_item_response() {
