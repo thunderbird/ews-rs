@@ -28,8 +28,35 @@ use std::marker::PhantomData;
 pub enum MessageXml {
     ServerBusy(ServerBusy),
     /// Any elements not handled above, for debugging and troubleshooting purposes.
-    // `Other` *must* come last, since it will match any single-layer XML.
+    // `Other` *must* come before `Unparsed`, since it will match any
+    // single-layer XML and carries more structure.
     Other(MessageXmlElements),
+    /// A shape none of the variants above represent.
+    ///
+    /// This field is diagnostic: the outcome of the response it accompanies is
+    /// already given by its response code. A shape not modelled here — nesting
+    /// deeper than one layer, for instance, which real servers do send — must
+    /// therefore not fail the whole response, or an operation the server
+    /// carried out would reach the caller as an error.
+    Unparsed(UnparsedMessageXml),
+}
+
+/// Marks a `MessageXml` whose shape this crate does not model.
+///
+/// Deserializing it consumes whatever is there and keeps nothing: the value is
+/// diagnostic, and preserving arbitrary XML would mean carrying a document
+/// model the crate otherwise has no use for.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UnparsedMessageXml;
+
+impl<'de> Deserialize<'de> for UnparsedMessageXml {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        de::IgnoredAny::deserialize(deserializer)?;
+        Ok(UnparsedMessageXml)
+    }
 }
 
 /// One of the two observed kinds of MessageXml elements: a Value named via the @Name attribute.
@@ -164,5 +191,25 @@ impl<'de> Deserialize<'de> for MessageXmlElements {
         D: Deserializer<'de>,
     {
         deserializer.deserialize_map(MessageXmlElementsVisitor::new())
+    }
+}
+
+#[cfg(test)]
+mod fallback_tests {
+    use super::*;
+
+    /// A real server answers an UpdateItem with a MessageXml nested deeper
+    /// than the modelled shapes. Before the catch-all, that failed the whole
+    /// response — reporting an error for an update the server had applied.
+    #[test]
+    fn nested_message_xml_does_not_sink_the_response() {
+        let xml = r#"<MessageXml>
+              <t:Outer>
+                <t:Inner Name="Whatever">value</t:Inner>
+              </t:Outer>
+            </MessageXml>"#;
+        let parsed: MessageXml =
+            quick_xml::de::from_str(xml).expect("an unmodelled shape must still parse");
+        assert_eq!(parsed, MessageXml::Unparsed(UnparsedMessageXml));
     }
 }
