@@ -7,7 +7,7 @@ use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
 use crate::types::common::{BaseItemId, MessageDisposition, PathToElement};
-use crate::{Items, MESSAGES_NS_URI, RealItem};
+use crate::{Items, RealItem, MESSAGES_NS_URI};
 
 /// A request to update properties of one or more Exchange items.
 ///

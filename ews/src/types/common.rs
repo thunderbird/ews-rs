@@ -886,7 +886,6 @@ pub struct Message {
     // which carry the proposed appointment), and are `None` on mail.
     //
     // See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/calendaritem>
-
     /// The start of the appointment.
     #[xml_struct(ns_prefix = "t")]
     pub start: Option<DateTime>,
