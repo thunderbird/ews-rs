@@ -6,8 +6,8 @@ use ews_proc_macros::operation_response;
 use serde::Deserialize;
 use xml_struct::XmlSerialize;
 
-use crate::types::common::{BaseItemId, Message, MessageDisposition, PathToElement};
-use crate::{Items, MESSAGES_NS_URI};
+use crate::types::common::{BaseItemId, MessageDisposition, PathToElement};
+use crate::{Items, MESSAGES_NS_URI, RealItem};
 
 /// A request to update properties of one or more Exchange items.
 ///
@@ -116,9 +116,17 @@ pub enum ItemChangeDescription {
         #[xml_struct(flatten, ns_prefix = "t")]
         field_uri: PathToElement,
 
-        /// The new value of the specified field.
-        #[xml_struct(ns_prefix = "t")]
-        message: Message,
+        /// The new value, carried by an item of the type being updated.
+        ///
+        /// The item type has to match the field: a `calendar:` field must
+        /// arrive inside a `CalendarItem`, and the server rejects the change
+        /// with `ErrorIncorrectUpdatePropertyCount` if it does not — so a
+        /// `Message` cannot express an update to anything but a message.
+        ///
+        /// The item must carry exactly one property, which is the one the
+        /// field URI names.
+        #[xml_struct(flatten, ns_prefix = "t")]
+        item: RealItem,
     },
 }
 
