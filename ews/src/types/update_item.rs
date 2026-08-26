@@ -18,7 +18,8 @@ use crate::{Items, RealItem, MESSAGES_NS_URI};
 pub struct UpdateItem {
     /// The action the Exchange server will take upon updating this item.
     ///
-    /// This field is required for and only applicable to [`Message`] items.
+    /// This field is required for and only applicable to [`Message`](crate::Message)
+    /// items.
     ///
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#messagedisposition-attribute>
     #[xml_struct(attribute)]
