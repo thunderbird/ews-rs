@@ -24,6 +24,15 @@ pub struct UpdateItem {
     #[xml_struct(attribute)]
     pub message_disposition: MessageDisposition,
 
+    /// Whether updating a calendar item tells the people on it.
+    ///
+    /// Required when updating calendar items, like the corresponding attribute
+    /// on `CreateItem`, and without effect otherwise.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#sendmeetinginvitationsorcancellations-attribute>
+    #[xml_struct(attribute)]
+    pub send_meeting_invitations_or_cancellations: Option<SendMeetingInvitationsOrCancellations>,
+
     /// The method the Exchange server will use to resolve conflicts between
     /// updates.
     ///
@@ -111,4 +120,17 @@ pub enum ItemChangeDescription {
         #[xml_struct(ns_prefix = "t")]
         message: Message,
     },
+}
+
+/// Whether an update mails the people on a calendar item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updateitem#sendmeetinginvitationsorcancellations-attribute>
+#[derive(Clone, Copy, Debug, XmlSerialize, PartialEq, Eq)]
+#[xml_struct(text)]
+pub enum SendMeetingInvitationsOrCancellations {
+    SendToNone,
+    SendOnlyToAll,
+    SendOnlyToChanged,
+    SendToAllAndSaveCopy,
+    SendToChangedAndSaveCopy,
 }

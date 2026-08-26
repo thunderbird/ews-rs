@@ -7,12 +7,24 @@ use xml_struct::XmlSerialize;
 
 use crate::{BaseFolderId, ItemResponseMessage, MessageDisposition, RealItem, MESSAGES_NS_URI};
 
+/// Whether the change mails the people on a calendar item.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#sendmeetinginvitations-attribute>
+#[derive(Clone, Copy, Debug, XmlSerialize, PartialEq, Eq)]
+#[xml_struct(text)]
+pub enum SendMeetingInvitations {
+    SendToNone,
+    SendOnlyToAll,
+    SendToAllAndSaveCopy,
+}
+
 /// A request to create (and optionally send) one or more Exchange items.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem>
 #[derive(Clone, Debug, XmlSerialize)]
 #[xml_struct(default_ns = MESSAGES_NS_URI)]
 #[operation_response(ItemResponseMessage)]
+
 pub struct CreateItem {
     /// The action the Exchange server will take upon creating this item.
     ///
@@ -23,6 +35,16 @@ pub struct CreateItem {
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#messagedisposition-attribute>
     #[xml_struct(attribute)]
     pub message_disposition: Option<MessageDisposition>,
+
+    /// Whether creating a calendar item sends invitations to its attendees.
+    ///
+    /// Required when creating calendar items — the server rejects the request
+    /// with `ErrorSendMeetingInvitationsRequired` if it is absent, even for an
+    /// appointment with no attendees at all — and has no effect otherwise.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/createitem#sendmeetinginvitations-attribute>
+    #[xml_struct(attribute)]
+    pub send_meeting_invitations: Option<SendMeetingInvitations>,
 
     /// The folder in which to store an item once it has been created.
     ///
