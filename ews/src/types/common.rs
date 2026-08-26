@@ -877,6 +877,147 @@ pub struct Message {
     /// This element was introduced in Exchange 2013.
     #[xml_struct(ns_prefix = "t")]
     pub flag: Option<Flag>,
+
+    // ---- Calendar item properties -----------------------------------------
+    //
+    // `RealItem` represents every item type with this one struct, so the
+    // properties an appointment adds to an item live here too. They are
+    // populated only for `RealItem::CalendarItem` (and for meeting requests,
+    // which carry the proposed appointment), and are `None` on mail.
+    //
+    // See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/calendaritem>
+
+    /// The start of the appointment.
+    #[xml_struct(ns_prefix = "t")]
+    pub start: Option<DateTime>,
+
+    /// The end of the appointment.
+    #[xml_struct(ns_prefix = "t")]
+    pub end: Option<DateTime>,
+
+    /// Whether the appointment covers whole days, in which case `start` and
+    /// `end` are midnight boundaries rather than times of day.
+    #[xml_struct(ns_prefix = "t")]
+    pub is_all_day_event: Option<bool>,
+
+    /// How the appointment shows on the organizer's free/busy calendar.
+    #[xml_struct(ns_prefix = "t")]
+    pub legacy_free_busy_status: Option<LegacyFreeBusyStatus>,
+
+    /// Where the appointment takes place, as free text.
+    #[xml_struct(ns_prefix = "t")]
+    pub location: Option<String>,
+
+    /// Whether this item is one occurrence of a recurring series.
+    ///
+    /// A `CalendarView` returns occurrences already expanded from their
+    /// series, so a client reading a date range does not have to interpret
+    /// recurrence rules itself.
+    #[xml_struct(ns_prefix = "t")]
+    pub is_recurring: Option<bool>,
+
+    /// Whether the meeting has been cancelled by its organizer.
+    #[xml_struct(ns_prefix = "t")]
+    pub is_cancelled: Option<bool>,
+
+    /// Whether the appointment is a meeting, i.e. has attendees.
+    #[xml_struct(ns_prefix = "t")]
+    pub is_meeting: Option<bool>,
+
+    /// The mailbox that organizes the meeting.
+    #[xml_struct(ns_prefix = "t")]
+    pub organizer: Option<Recipient>,
+
+    /// Attendees whose presence the organizer expects.
+    #[xml_struct(ns_prefix = "t")]
+    pub required_attendees: Option<ArrayOfAttendees>,
+
+    /// Attendees invited without their presence being expected.
+    #[xml_struct(ns_prefix = "t")]
+    pub optional_attendees: Option<ArrayOfAttendees>,
+
+    /// This mailbox's own response to the meeting invitation.
+    #[xml_struct(ns_prefix = "t")]
+    pub my_response_type: Option<ResponseType>,
+}
+
+/// How an appointment shows on a calendar's free/busy view.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/legacyfreebusystatus>
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+pub enum LegacyFreeBusyStatus {
+    Free,
+    Tentative,
+    Busy,
+    #[serde(rename = "OOF")]
+    OOF,
+    WorkingElsewhere,
+    NoData,
+}
+
+/// A mailbox's answer to a meeting invitation.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/responsetype>
+#[derive(Clone, Copy, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+pub enum ResponseType {
+    Unknown,
+    Organizer,
+    Tentative,
+    Accept,
+    Decline,
+    NoResponseReceived,
+}
+
+/// A list of meeting attendees.
+///
+/// The XML nests each entry in an `<t:Attendee>` element, so the sequence is
+/// unwrapped the same way [`ArrayOfRecipients`] unwraps its mailboxes.
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+pub struct ArrayOfAttendees(
+    #[serde(deserialize_with = "deserialize_attendees")]
+    #[xml_struct(flatten)]
+    pub Vec<Attendee>,
+);
+
+impl Deref for ArrayOfAttendees {
+    type Target = Vec<Attendee>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+fn deserialize_attendees<'de, D>(deserializer: D) -> Result<Vec<Attendee>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Clone, Debug, Deserialize)]
+    #[serde(rename_all = "PascalCase")]
+    struct AttendeeSequence {
+        attendee: Vec<Attendee>,
+    }
+
+    let seq = AttendeeSequence::deserialize(deserializer)?;
+
+    Ok(seq.attendee)
+}
+
+/// One invitee of a meeting, and how they answered.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attendee>
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct Attendee {
+    #[xml_struct(ns_prefix = "t")]
+    pub mailbox: Mailbox,
+
+    /// How this attendee answered the invitation.
+    #[xml_struct(ns_prefix = "t")]
+    pub response_type: Option<ResponseType>,
+
+    /// When they answered.
+    #[xml_struct(ns_prefix = "t")]
+    pub last_response_time: Option<DateTime>,
 }
 
 /// An extended MAPI property of an Exchange item or folder.
@@ -1380,6 +1521,76 @@ mod tests {
         test_utils::{assert_deserialized_content, assert_serialized_content, minify_xml},
         Error,
     };
+
+    /// Tests that a calendar item's own properties deserialize, which the
+    /// shared [`Message`] representation did not carry before: a `CalendarView`
+    /// answer would parse without error while silently dropping the start,
+    /// end and location of every appointment.
+    #[test]
+    fn test_calendar_item_properties() -> Result<(), Error> {
+        let xml = minify_xml(
+            r#"
+            <CalendarItem>
+              <t:Subject>Weekly review</t:Subject>
+              <t:Start>2026-08-26T09:00:00Z</t:Start>
+              <t:End>2026-08-26T10:00:00Z</t:End>
+              <t:IsAllDayEvent>false</t:IsAllDayEvent>
+              <t:LegacyFreeBusyStatus>Busy</t:LegacyFreeBusyStatus>
+              <t:Location>Room 3</t:Location>
+              <t:IsRecurring>true</t:IsRecurring>
+              <t:Organizer>
+                <t:Mailbox>
+                  <t:Name>Alice Test</t:Name>
+                  <t:EmailAddress>alice@test.com</t:EmailAddress>
+                </t:Mailbox>
+              </t:Organizer>
+              <t:RequiredAttendees>
+                <t:Attendee>
+                  <t:Mailbox>
+                    <t:EmailAddress>bob@test.com</t:EmailAddress>
+                  </t:Mailbox>
+                  <t:ResponseType>Accept</t:ResponseType>
+                </t:Attendee>
+              </t:RequiredAttendees>
+              <t:MyResponseType>Tentative</t:MyResponseType>
+            </CalendarItem>"#,
+        );
+
+        let expected = Message {
+            subject: Some("Weekly review".to_string()),
+            start: Some(DateTime(
+                time::OffsetDateTime::from_unix_timestamp(1787734800).unwrap(),
+            )),
+            end: Some(DateTime(
+                time::OffsetDateTime::from_unix_timestamp(1787738400).unwrap(),
+            )),
+            is_all_day_event: Some(false),
+            legacy_free_busy_status: Some(LegacyFreeBusyStatus::Busy),
+            location: Some("Room 3".to_string()),
+            is_recurring: Some(true),
+            organizer: Some(Recipient {
+                mailbox: Mailbox {
+                    name: Some("Alice Test".to_string()),
+                    email_address: Some("alice@test.com".to_string()),
+                    ..Default::default()
+                },
+            }),
+            required_attendees: Some(ArrayOfAttendees(vec![Attendee {
+                mailbox: Mailbox {
+                    email_address: Some("bob@test.com".to_string()),
+                    ..Default::default()
+                },
+                response_type: Some(ResponseType::Accept),
+                last_response_time: None,
+            }])),
+            my_response_type: Some(ResponseType::Tentative),
+            ..Default::default()
+        };
+
+        assert_deserialized_content(&xml, expected);
+
+        Ok(())
+    }
 
     /// Tests that an [`ArrayOfRecipients`] correctly serializes into XML and
     /// back again. There should be a 1-to-1 correspondence between
