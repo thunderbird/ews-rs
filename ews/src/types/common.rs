@@ -915,6 +915,15 @@ pub struct Message {
     #[xml_struct(ns_prefix = "t")]
     pub is_recurring: Option<bool>,
 
+    /// The iCalendar UID of the appointment.
+    ///
+    /// Every occurrence expanded from one recurring series carries the same
+    /// value, which is what lets a client group occurrences back into the
+    /// series they came from without interpreting recurrence rules. Item ids,
+    /// by contrast, differ per occurrence.
+    #[xml_struct(ns_prefix = "t")]
+    pub uid: Option<String>,
+
     /// Whether the meeting has been cancelled by its organizer.
     #[xml_struct(ns_prefix = "t")]
     pub is_cancelled: Option<bool>,
