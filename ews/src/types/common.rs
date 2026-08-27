@@ -933,6 +933,9 @@ pub struct Message {
     /// value, which is what lets a client group occurrences back into the
     /// series they came from without interpreting recurrence rules. Item ids,
     /// by contrast, differ per occurrence.
+    // Named explicitly: the struct's PascalCase rule would look for `Uid`,
+    // while the element Exchange sends is `UID`.
+    #[serde(rename = "UID")]
     #[xml_struct(ns_prefix = "t")]
     pub uid: Option<String>,
 
