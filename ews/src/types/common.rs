@@ -924,6 +924,13 @@ pub struct Message {
     #[xml_struct(ns_prefix = "t")]
     pub uid: Option<String>,
 
+    /// The rule by which the appointment repeats, when it does.
+    ///
+    /// Written when creating a series; a `CalendarView` never needs it, since
+    /// the server expands the series into occurrences for the range asked for.
+    #[xml_struct(ns_prefix = "t")]
+    pub recurrence: Option<Recurrence>,
+
     /// Whether the meeting has been cancelled by its organizer.
     #[xml_struct(ns_prefix = "t")]
     pub is_cancelled: Option<bool>,
@@ -1223,6 +1230,95 @@ pub struct Body {
     #[serde(rename = "$text")]
     #[xml_struct(flatten)]
     pub content: Option<String>,
+}
+
+/// How an appointment repeats: a pattern saying when, and a range saying for
+/// how long.
+///
+/// The element requires exactly one of each, in that order, and the server
+/// rejects the request outright if they arrive the other way round.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/recurrence-recurrencetype>
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+pub struct Recurrence {
+    pub pattern: RecurrencePattern,
+    pub range: RecurrenceRange,
+}
+
+/// When an appointment repeats.
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+pub enum RecurrencePattern {
+    /// Every N days.
+    #[xml_struct(ns_prefix = "t")]
+    DailyRecurrence {
+        #[xml_struct(ns_prefix = "t")]
+        interval: u16,
+    },
+
+    /// Every N weeks, on the named days.
+    #[xml_struct(ns_prefix = "t")]
+    WeeklyRecurrence {
+        #[xml_struct(ns_prefix = "t")]
+        interval: u16,
+
+        /// A space-separated list of day names, e.g. "Monday Wednesday".
+        #[xml_struct(ns_prefix = "t")]
+        days_of_week: String,
+    },
+
+    /// Every N months, on a fixed day of the month.
+    #[xml_struct(ns_prefix = "t")]
+    AbsoluteMonthlyRecurrence {
+        #[xml_struct(ns_prefix = "t")]
+        interval: u16,
+
+        /// The day of the month, 1 to 31.
+        #[xml_struct(ns_prefix = "t")]
+        day_of_month: u8,
+    },
+
+    /// Every year, on a fixed day of a fixed month.
+    #[xml_struct(ns_prefix = "t")]
+    AbsoluteYearlyRecurrence {
+        #[xml_struct(ns_prefix = "t")]
+        day_of_month: u8,
+
+        /// The month's name, e.g. "September".
+        #[xml_struct(ns_prefix = "t")]
+        month: String,
+    },
+}
+
+/// For how long an appointment repeats.
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+pub enum RecurrenceRange {
+    /// Forever.
+    #[xml_struct(ns_prefix = "t")]
+    NoEndRecurrence {
+        /// The date the series starts, as `YYYY-MM-DD`.
+        #[xml_struct(ns_prefix = "t")]
+        start_date: String,
+    },
+
+    /// Until a date, inclusive.
+    #[xml_struct(ns_prefix = "t")]
+    EndDateRecurrence {
+        #[xml_struct(ns_prefix = "t")]
+        start_date: String,
+
+        #[xml_struct(ns_prefix = "t")]
+        end_date: String,
+    },
+
+    /// A fixed number of occurrences.
+    #[xml_struct(ns_prefix = "t")]
+    NumberedRecurrence {
+        #[xml_struct(ns_prefix = "t")]
+        start_date: String,
+
+        #[xml_struct(ns_prefix = "t")]
+        number_of_occurrences: u16,
+    },
 }
 
 /// The content type of an item's body.
