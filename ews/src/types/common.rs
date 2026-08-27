@@ -407,7 +407,19 @@ pub enum BaseItemId {
         change_key: Option<String>,
     },
     // OccurrenceItemId { .. }
-    // RecurringMasterItemId { .. }
+    /// The series an occurrence belongs to, addressed through the occurrence's
+    /// own id.
+    ///
+    /// What makes editing or deleting a whole series possible from an
+    /// occurrence in hand: the occurrence ids a `CalendarView` returns cannot
+    /// reach the master any other way.
+    RecurringMasterItemId {
+        #[xml_struct(attribute)]
+        occurrence_id: String,
+
+        #[xml_struct(attribute)]
+        change_key: Option<String>,
+    },
 }
 
 /// The unique identifier of an item.
