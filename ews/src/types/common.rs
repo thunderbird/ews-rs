@@ -606,6 +606,14 @@ pub enum RealItem {
     Item(Message),
     Message(Message),
     CalendarItem(Message),
+    /// A reply to a meeting request, accepting it. Created rather than
+    /// updated: the answer is a message sent to the organizer, and the
+    /// server's own bookkeeping follows from it.
+    AcceptItem(Message),
+    /// The same, answering "maybe".
+    TentativelyAcceptItem(Message),
+    /// The same, declining.
+    DeclineItem(Message),
     Contact(Message),
     DistributionList(Message),
     MeetingMessage(Message),
@@ -624,6 +632,9 @@ impl RealItem {
             Item(message)
             | Message(message)
             | CalendarItem(message)
+            | AcceptItem(message)
+            | TentativelyAcceptItem(message)
+            | DeclineItem(message)
             | Contact(message)
             | DistributionList(message)
             | MeetingMessage(message)
@@ -642,6 +653,9 @@ impl RealItem {
             Item(message)
             | Message(message)
             | CalendarItem(message)
+            | AcceptItem(message)
+            | TentativelyAcceptItem(message)
+            | DeclineItem(message)
             | Contact(message)
             | DistributionList(message)
             | MeetingMessage(message)
@@ -938,6 +952,14 @@ pub struct Message {
     #[serde(rename = "UID")]
     #[xml_struct(ns_prefix = "t")]
     pub uid: Option<String>,
+
+    /// The meeting request a response object answers.
+    ///
+    /// Set only on `AcceptItem` and its siblings, which carry nothing else:
+    /// the response is defined entirely by which item it refers to and which
+    /// of the three it is.
+    #[xml_struct(ns_prefix = "t")]
+    pub reference_item_id: Option<ReferenceItemId>,
 
     /// The rule by which the appointment repeats, when it does.
     ///
@@ -1245,6 +1267,20 @@ pub struct Body {
     #[serde(rename = "$text")]
     #[xml_struct(flatten)]
     pub content: Option<String>,
+}
+
+/// The item a response object refers to.
+///
+/// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/referenceitemid>
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+pub struct ReferenceItemId {
+    #[serde(rename = "@Id")]
+    #[xml_struct(attribute)]
+    pub id: String,
+
+    #[serde(rename = "@ChangeKey")]
+    #[xml_struct(attribute)]
+    pub change_key: Option<String>,
 }
 
 /// How an appointment repeats: a pattern saying when, and a range saying for
