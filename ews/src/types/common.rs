@@ -1026,8 +1026,11 @@ pub enum ResponseType {
 /// unwrapped the same way [`ArrayOfRecipients`] unwraps its mailboxes.
 #[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
 pub struct ArrayOfAttendees(
+    // Flattened for reading only: the deserializer is told to unwrap the
+    // `<t:Attendee>` elements itself. Flattening the serializer too dropped
+    // that wrapper on the way out, leaving a bare `<t:Mailbox>` that Exchange
+    // accepts and silently ignores — a meeting created with nobody on it.
     #[serde(deserialize_with = "deserialize_attendees")]
-    #[xml_struct(flatten)]
     pub Vec<Attendee>,
 );
 
