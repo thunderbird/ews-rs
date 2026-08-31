@@ -1025,22 +1025,50 @@ pub enum ResponseType {
 /// The XML nests each entry in an `<t:Attendee>` element, so the sequence is
 /// unwrapped the same way [`ArrayOfRecipients`] unwraps its mailboxes.
 #[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
-pub struct ArrayOfAttendees {
-    // A named field, so each entry is written inside the `<t:Attendee>`
-    // element the schema requires. A newtype around the sequence emitted each
-    // attendee's own fields instead, leaving a bare `<t:Mailbox>` that
-    // Exchange accepts and silently ignores — a meeting created with nobody
-    // on it, and nothing anywhere to say so.
-    #[serde(rename = "Attendee", default)]
+pub struct ArrayOfAttendees(
+    #[serde(deserialize_with = "deserialize_attendees")] pub Vec<AttendeeEntry>,
+);
+
+/// One entry of an [`ArrayOfAttendees`], wrapping its attendee in the
+/// `<t:Attendee>` element the schema requires.
+///
+/// The same shape [`Recipient`] gives a mailbox, and for the same reason: a
+/// sequence writes one element per item only when each item carries its own
+/// name. A bare sequence of attendees wrote their fields into a single shared
+/// element — which Exchange accepts and silently ignores, creating a meeting
+/// with nobody on it.
+#[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct AttendeeEntry {
     #[xml_struct(ns_prefix = "t")]
-    pub attendee: Vec<Attendee>,
+    pub attendee: Attendee,
+}
+
+/// Deserializes a list of attendees.
+fn deserialize_attendees<'de, D>(deserializer: D) -> Result<Vec<AttendeeEntry>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Clone, Debug, Deserialize)]
+    #[serde(rename_all = "PascalCase")]
+    struct AttendeeSequence {
+        #[serde(default)]
+        attendee: Vec<Attendee>,
+    }
+
+    let seq = AttendeeSequence::deserialize(deserializer)?;
+    Ok(seq
+        .attendee
+        .into_iter()
+        .map(|attendee| AttendeeEntry { attendee })
+        .collect())
 }
 
 impl Deref for ArrayOfAttendees {
-    type Target = Vec<Attendee>;
+    type Target = Vec<AttendeeEntry>;
 
     fn deref(&self) -> &Self::Target {
-        &self.attendee
+        &self.0
     }
 }
 
@@ -1721,16 +1749,16 @@ mod tests {
                     ..Default::default()
                 },
             }),
-            required_attendees: Some(ArrayOfAttendees {
-                attendee: vec![Attendee {
+            required_attendees: Some(ArrayOfAttendees(vec![AttendeeEntry {
+                attendee: Attendee {
                     mailbox: Mailbox {
                         email_address: Some("bob@test.com".to_string()),
                         ..Default::default()
                     },
                     response_type: Some(ResponseType::Accept),
                     last_response_time: None,
-                }],
-            }),
+                },
+            }])),
             my_response_type: Some(ResponseType::Tentative),
             ..Default::default()
         };
