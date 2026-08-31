@@ -23,6 +23,7 @@ pub mod mark_all_read;
 pub mod mark_as_junk;
 pub mod move_folder;
 pub mod move_item;
+pub mod resolve_names;
 pub mod server_version;
 pub mod sync_folder_hierarchy;
 pub mod sync_folder_items;
