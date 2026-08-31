@@ -1025,37 +1025,25 @@ pub enum ResponseType {
 /// The XML nests each entry in an `<t:Attendee>` element, so the sequence is
 /// unwrapped the same way [`ArrayOfRecipients`] unwraps its mailboxes.
 #[derive(Clone, Debug, Deserialize, XmlSerialize, PartialEq, Eq)]
-pub struct ArrayOfAttendees(
-    // Flattened for reading only: the deserializer is told to unwrap the
-    // `<t:Attendee>` elements itself. Flattening the serializer too dropped
-    // that wrapper on the way out, leaving a bare `<t:Mailbox>` that Exchange
-    // accepts and silently ignores — a meeting created with nobody on it.
-    #[serde(deserialize_with = "deserialize_attendees")]
-    pub Vec<Attendee>,
-);
+pub struct ArrayOfAttendees {
+    // A named field, so each entry is written inside the `<t:Attendee>`
+    // element the schema requires. A newtype around the sequence emitted each
+    // attendee's own fields instead, leaving a bare `<t:Mailbox>` that
+    // Exchange accepts and silently ignores — a meeting created with nobody
+    // on it, and nothing anywhere to say so.
+    #[serde(rename = "Attendee", default)]
+    #[xml_struct(ns_prefix = "t")]
+    pub attendee: Vec<Attendee>,
+}
 
 impl Deref for ArrayOfAttendees {
     type Target = Vec<Attendee>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.attendee
     }
 }
 
-fn deserialize_attendees<'de, D>(deserializer: D) -> Result<Vec<Attendee>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Clone, Debug, Deserialize)]
-    #[serde(rename_all = "PascalCase")]
-    struct AttendeeSequence {
-        attendee: Vec<Attendee>,
-    }
-
-    let seq = AttendeeSequence::deserialize(deserializer)?;
-
-    Ok(seq.attendee)
-}
 
 /// One invitee of a meeting, and how they answered.
 ///
@@ -1733,14 +1721,16 @@ mod tests {
                     ..Default::default()
                 },
             }),
-            required_attendees: Some(ArrayOfAttendees(vec![Attendee {
-                mailbox: Mailbox {
-                    email_address: Some("bob@test.com".to_string()),
-                    ..Default::default()
-                },
-                response_type: Some(ResponseType::Accept),
-                last_response_time: None,
-            }])),
+            required_attendees: Some(ArrayOfAttendees {
+                attendee: vec![Attendee {
+                    mailbox: Mailbox {
+                        email_address: Some("bob@test.com".to_string()),
+                        ..Default::default()
+                    },
+                    response_type: Some(ResponseType::Accept),
+                    last_response_time: None,
+                }],
+            }),
             my_response_type: Some(ResponseType::Tentative),
             ..Default::default()
         };
