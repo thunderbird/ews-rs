@@ -1072,7 +1072,6 @@ impl Deref for ArrayOfAttendees {
     }
 }
 
-
 /// One invitee of a meeting, and how they answered.
 ///
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/attendee>
