@@ -229,6 +229,7 @@ mod tests {
                     parent_folder_id: None,
                     folder_class: None,
                     display_name: None,
+                    distinguished_folder_id: None,
                     total_count: None,
                     child_folder_count: None,
                     extended_property: None,
