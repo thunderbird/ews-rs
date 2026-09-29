@@ -26,6 +26,13 @@ pub(crate) const TYPES_NS_URI: &str = "http://schemas.microsoft.com/exchange/ser
 pub struct FolderShape {
     #[xml_struct(ns_prefix = "t")]
     pub base_shape: BaseShape,
+
+    /// A list of properties which should be included in addition to those
+    /// implied by other fields.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/additionalproperties>
+    #[xml_struct(ns_prefix = "t")]
+    pub additional_properties: Option<Vec<PathToElement>>,
 }
 
 /// The item properties which should be included in the response.
@@ -498,6 +505,13 @@ pub enum Folder {
 
         #[xml_struct(ns_prefix = "t")]
         display_name: Option<String>,
+
+        /// The well-known name of the folder, for those folders which have
+        /// one. Available from Exchange Server 2013.
+        ///
+        /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/distinguishedfolderid-distinguishedfolderidnametype>
+        #[xml_struct(ns_prefix = "t")]
+        distinguished_folder_id: Option<String>,
 
         #[xml_struct(ns_prefix = "t")]
         total_count: Option<u32>,
@@ -1593,6 +1607,49 @@ mod tests {
                 complete_date: None,
             }),
             ..Default::default()
+        };
+
+        assert_deserialized_content(content, expected);
+    }
+
+    #[test]
+    fn test_serialize_folder_shape_with_additional_properties() -> Result<(), Error> {
+        let shape = FolderShape {
+            base_shape: BaseShape::IdOnly,
+            additional_properties: Some(vec![PathToElement::FieldURI {
+                field_URI: "folder:DistinguishedFolderId".to_string(),
+            }]),
+        };
+
+        let expected = "<FolderShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI=\"folder:DistinguishedFolderId\"/></t:AdditionalProperties></FolderShape>";
+
+        assert_serialized_content(&shape, "FolderShape", expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_deserialize_folder_with_distinguished_id() {
+        let content = r#"
+            <t:Folder>
+              <t:FolderId Id="AQMkADRi" ChangeKey="AQAAABYA"/>
+              <t:DisplayName>Inbox</t:DisplayName>
+              <t:DistinguishedFolderId>inbox</t:DistinguishedFolderId>
+            </t:Folder>"#;
+
+        let expected = Folder::Folder {
+            folder_id: Some(FolderId {
+                id: "AQMkADRi".to_string(),
+                change_key: Some("AQAAABYA".to_string()),
+            }),
+            parent_folder_id: None,
+            folder_class: None,
+            display_name: Some("Inbox".to_string()),
+            distinguished_folder_id: Some("inbox".to_string()),
+            total_count: None,
+            child_folder_count: None,
+            extended_property: None,
+            unread_count: None,
         };
 
         assert_deserialized_content(content, expected);
