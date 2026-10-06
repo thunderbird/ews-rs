@@ -23,7 +23,7 @@ name = "ews"
 version = "0.1.1"
 dependencies = [
  "ews_proc_macros 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "quick-xml 0.41.0",
+ "quick-xml",
  "serde",
  "serde_path_to_error",
  "thiserror",
@@ -80,15 +80,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d1597b0c024618f09a9c3b8655b7e430397a36d23fdafec26d6965e9eec3eba"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "quick-xml"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1004a344b30a54e2ee58d66a71b32d2db2feb0a31f9a2d302bf0536f15de2a33"
-dependencies = [
- "memchr",
 ]
 
 [[package]]
@@ -209,12 +200,12 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "xml_struct"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "746ddda2602e8f9c27a628a8e7ce12c1b5048de5e2a3f0d1509ad7ae46dd8c4f"
+checksum = "43059d8e1ecbf98bccea1f80a43144c76267059b4015018338fc7df53e9181b5"
 dependencies = [
  "anyhow",
- "quick-xml 0.31.0",
+ "quick-xml",
  "thiserror",
  "xml_struct_derive",
 ]
