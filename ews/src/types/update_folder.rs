@@ -98,6 +98,7 @@ mod tests {
                         },
                         folder: Folder::Folder {
                             display_name: Some("NewFolderName".to_string()),
+                            distinguished_folder_id: None,
                             folder_id: None,
                             parent_folder_id: None,
                             folder_class: None,
@@ -164,6 +165,7 @@ mod tests {
                             parent_folder_id: None,
                             folder_class: None,
                             display_name: None,
+                            distinguished_folder_id: None,
                             total_count: None,
                             child_folder_count: None,
                             extended_property: None,
