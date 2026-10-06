@@ -877,6 +877,79 @@ pub struct Message {
     /// This element was introduced in Exchange 2013.
     #[xml_struct(ns_prefix = "t")]
     pub flag: Option<Flag>,
+
+    /// The start time of a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/start>
+    #[xml_struct(ns_prefix = "t")]
+    pub start: Option<DateTime>,
+
+    /// The end time of a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/end>
+    #[xml_struct(ns_prefix = "t")]
+    pub end: Option<DateTime>,
+
+    /// The location of a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/location>
+    #[xml_struct(ns_prefix = "t")]
+    pub location: Option<String>,
+
+    /// Whether a calendar item lasts all day.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isalldayevent>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_all_day_event: Option<bool>,
+
+    /// Whether a calendar item has been cancelled by its organizer.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/iscancelled>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_cancelled: Option<bool>,
+
+    /// Whether a calendar item is a meeting (i.e. has attendees other than
+    /// its organizer).
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/ismeeting>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_meeting: Option<bool>,
+
+    /// Whether a calendar item is recurring.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isrecurring>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_recurring: Option<bool>,
+
+    /// The free/busy status to publish for a calendar item.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/legacyfreebusystatus>
+    #[xml_struct(ns_prefix = "t")]
+    pub legacy_free_busy_status: Option<String>,
+
+    /// The organizer of a calendar item or meeting request.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/organizer>
+    #[xml_struct(ns_prefix = "t")]
+    pub organizer: Option<Recipient>,
+
+    /// The state of a calendar item, represented as a bitmask.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appointmentstate>
+    #[xml_struct(ns_prefix = "t")]
+    pub appointment_state: Option<usize>,
+
+    /// Whether a calendar item is an online meeting.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isonlinemeeting>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_online_meeting: Option<bool>,
+
+    /// Whether the user requesting the calendar item is the organizer.
+    ///
+    /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/isorganizer>
+    #[xml_struct(ns_prefix = "t")]
+    pub is_organizer: Option<bool>,
 }
 
 /// An extended MAPI property of an Exchange item or folder.
@@ -1592,6 +1665,91 @@ mod tests {
                 due_date: Some("2026-01-26T23:00:00Z".to_string()),
                 complete_date: None,
             }),
+            ..Default::default()
+        };
+
+        assert_deserialized_content(content, expected);
+    }
+
+    #[test]
+    fn test_serialize_message_calendar_fields() {
+        let message = Message {
+            start: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T17:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            end: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T18:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            location: Some("Room 42".to_string()),
+            is_all_day_event: Some(false),
+            is_cancelled: Some(false),
+            is_meeting: Some(true),
+            is_recurring: Some(false),
+            legacy_free_busy_status: Some("Busy".to_string()),
+            organizer: Some(Recipient {
+                mailbox: Mailbox {
+                    name: Some("Alice Test".to_string()),
+                    email_address: Some("alice@test.com".to_string()),
+                    ..Default::default()
+                },
+            }),
+            appointment_state: Some(1),
+            is_online_meeting: Some(false),
+            is_organizer: Some(true),
+            ..Default::default()
+        };
+
+        let expected = r#"<Message><t:Start>2026-06-26T17:54:39.000000000Z</t:Start><t:End>2026-06-26T18:54:39.000000000Z</t:End><t:Location>Room 42</t:Location><t:IsAllDayEvent>false</t:IsAllDayEvent><t:IsCancelled>false</t:IsCancelled><t:IsMeeting>true</t:IsMeeting><t:IsRecurring>false</t:IsRecurring><t:LegacyFreeBusyStatus>Busy</t:LegacyFreeBusyStatus><t:Organizer><t:Mailbox><t:Name>Alice Test</t:Name><t:EmailAddress>alice@test.com</t:EmailAddress></t:Mailbox></t:Organizer><t:AppointmentState>1</t:AppointmentState><t:IsOnlineMeeting>false</t:IsOnlineMeeting><t:IsOrganizer>true</t:IsOrganizer></Message>"#;
+
+        assert_serialized_content(&message, "Message", expected);
+    }
+
+    #[test]
+    fn test_deserialize_message_calendar_fields() {
+        let content = r#"
+            <t:Message>
+              <t:Start>2026-06-26T17:54:39Z</t:Start>
+              <t:End>2026-06-26T18:54:39Z</t:End>
+              <t:Location>Room 42</t:Location>
+              <t:IsAllDayEvent>false</t:IsAllDayEvent>
+              <t:IsCancelled>false</t:IsCancelled>
+              <t:IsMeeting>true</t:IsMeeting>
+              <t:IsRecurring>false</t:IsRecurring>
+              <t:LegacyFreeBusyStatus>Busy</t:LegacyFreeBusyStatus>
+              <t:Organizer>
+                <t:Mailbox>
+                  <t:Name>Alice Test</t:Name>
+                  <t:EmailAddress>alice@test.com</t:EmailAddress>
+                </t:Mailbox>
+              </t:Organizer>
+              <t:AppointmentState>1</t:AppointmentState>
+              <t:IsOnlineMeeting>false</t:IsOnlineMeeting>
+              <t:IsOrganizer>true</t:IsOrganizer>
+            </t:Message>"#;
+
+        let expected = Message {
+            start: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T17:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            end: Some(DateTime(
+                OffsetDateTime::parse("2026-06-26T18:54:39Z", &Iso8601::DEFAULT).unwrap(),
+            )),
+            location: Some("Room 42".to_string()),
+            is_all_day_event: Some(false),
+            is_cancelled: Some(false),
+            is_meeting: Some(true),
+            is_recurring: Some(false),
+            legacy_free_busy_status: Some("Busy".to_string()),
+            organizer: Some(Recipient {
+                mailbox: Mailbox {
+                    name: Some("Alice Test".to_string()),
+                    email_address: Some("alice@test.com".to_string()),
+                    ..Default::default()
+                },
+            }),
+            appointment_state: Some(1),
+            is_online_meeting: Some(false),
+            is_organizer: Some(true),
             ..Default::default()
         };
 
