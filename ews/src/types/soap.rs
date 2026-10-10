@@ -197,8 +197,8 @@ mod tests {
         sync_folder_items::SyncFolderItemsResponse,
         types::{
             common::message_xml::{
-                MessageXmlElement, MessageXmlElements, MessageXmlTagged, MessageXmlValue,
-                ServerBusy,
+                MessageXmlAttributed, MessageXmlElement, MessageXmlElements, MessageXmlTagged,
+                MessageXmlValue, ServerBusy,
             },
             sealed::EnvelopeBodyContents,
         },
@@ -373,6 +373,75 @@ mod tests {
             assert_eq!(
                 elements, expected,
                 "message XML should list all tags in order"
+            );
+        } else {
+            panic!("error should be request fault, got: {err:?}");
+        }
+    }
+
+    #[test]
+    fn deserialize_envelope_with_invalid_property_set_fault() {
+        // This XML is based on a real `ErrorInvalidPropertySet` response from
+        // Exchange, where `MessageXml` contains a tag with an XML attribute
+        // and no text content.
+        let xml = r#"
+            <?xml version="1.0" encoding="utf-8"?>
+            <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+              <s:Body>
+                <s:Fault>
+                  <faultcode xmlns:a="http://schemas.microsoft.com/exchange/services/2006/types">a:ErrorInvalidPropertySet</faultcode>
+                  <faultstring xml:lang="en-US">Set action is invalid for property.</faultstring>
+                  <detail>
+                    <e:ResponseCode xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">ErrorInvalidPropertySet</e:ResponseCode>
+                    <e:Message xmlns:e="http://schemas.microsoft.com/exchange/services/2006/errors">Set action is invalid for property.</e:Message>
+                    <t:MessageXml xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
+                      <t:FieldURI FieldURI="calendar:IsMeeting"/>
+                    </t:MessageXml>
+                  </detail>
+                </s:Fault>
+              </s:Body>
+            </s:Envelope>"#;
+
+        let err = <Envelope<FooResponse>>::from_xml_document(xml.as_bytes())
+            .expect_err("should return error when body contains fault");
+
+        if let Error::RequestFault(fault) = err {
+            assert_eq!(
+                fault.faultstring, "Set action is invalid for property.",
+                "fault string should match original document"
+            );
+
+            let detail = fault.detail.expect("fault detail should be present");
+            assert_eq!(
+                detail.response_code,
+                Some(ResponseCode::ErrorInvalidPropertySet),
+                "response code should match original document"
+            );
+            assert_eq!(
+                detail.message,
+                Some("Set action is invalid for property.".to_string()),
+                "error message should match original document"
+            );
+
+            let message_xml = detail.message_xml.expect("message XML should be present");
+
+            let MessageXml::Other(elements) = message_xml else {
+                panic!("this message XML should only have bare tags")
+            };
+            let expected = MessageXmlElements {
+                elements: vec![MessageXmlElement::MessageXmlAttributed(
+                    MessageXmlAttributed {
+                        name: "FieldURI".to_string(),
+                        attributes: vec![(
+                            "FieldURI".to_string(),
+                            "calendar:IsMeeting".to_string(),
+                        )],
+                    },
+                )],
+            };
+            assert_eq!(
+                elements, expected,
+                "message XML should list the attributed tag"
             );
         } else {
             panic!("error should be request fault, got: {err:?}");

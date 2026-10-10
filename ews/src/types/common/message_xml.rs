@@ -48,6 +48,14 @@ pub struct MessageXmlTagged {
     pub value: String,
 }
 
+/// A tag with one or more XML attributes and no text content, e.g.
+/// `<t:FieldURI FieldURI="calendar:IsMeeting"/>`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageXmlAttributed {
+    pub name: String,
+    pub attributes: Vec<(String, String)>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageXmlElements {
     pub elements: Vec<MessageXmlElement>,
@@ -57,6 +65,7 @@ pub struct MessageXmlElements {
 pub enum MessageXmlElement {
     MessageXmlTagged(MessageXmlTagged),
     MessageXmlValue(MessageXmlValue),
+    MessageXmlAttributed(MessageXmlAttributed),
 }
 
 /// Data associated with a [`ResponseCode::ErrorServerBusy`](crate::response::ResponseCode::ErrorServerBusy).
@@ -122,13 +131,75 @@ impl MessageXmlElementsVisitor {
 }
 
 /// An internal helper type used in the [`MessageXmlElementsVisitor`] to extract the
-/// text of an element while discarding the [`TYPES_NS_URI`](crate::TYPES_NS_URI) XML namespace declaration.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+/// content of an element: its text, the [`TYPES_NS_URI`](crate::TYPES_NS_URI) XML
+/// namespace declaration, or, if it has neither, its XML attributes (e.g.
+/// `<t:FieldURI FieldURI="calendar:IsMeeting"/>`).
+#[derive(Debug, Clone, PartialEq)]
 enum Text {
-    #[serde(rename = "$text")]
-    Text(String),
-    #[serde(rename = "http://schemas.microsoft.com/exchange/services/2006/types")]
+    Content(String),
     TypesNsDeclaration,
+    Attributed(Vec<(String, String)>),
+}
+
+struct TextVisitor;
+
+impl<'de> Visitor<'de> for TextVisitor {
+    type Value = Text;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("element text, a namespace declaration, or element attributes")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        if v == "http://schemas.microsoft.com/exchange/services/2006/types" {
+            Ok(Text::TypesNsDeclaration)
+        } else {
+            Ok(Text::Content(v.to_string()))
+        }
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        self.visit_str(&v)
+    }
+
+    fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+    where
+        M: MapAccess<'de>,
+    {
+        let mut attributes = vec![];
+
+        while let Some(key) = access.next_key::<String>()? {
+            if key == "$text" {
+                let value = access.next_value::<String>()?;
+                return Ok(Text::Content(value));
+            } else if key == "http://schemas.microsoft.com/exchange/services/2006/types" {
+                access.next_value::<de::IgnoredAny>()?;
+                return Ok(Text::TypesNsDeclaration);
+            } else if let Some(attribute_name) = key.strip_prefix('@') {
+                let value = access.next_value::<String>()?;
+                attributes.push((attribute_name.to_string(), value));
+            } else {
+                access.next_value::<de::IgnoredAny>()?;
+            }
+        }
+
+        Ok(Text::Attributed(attributes))
+    }
+}
+
+impl<'de> Deserialize<'de> for Text {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(TextVisitor)
+    }
 }
 
 impl<'de> Visitor<'de> for MessageXmlElementsVisitor {
@@ -148,9 +219,21 @@ impl<'de> Visitor<'de> for MessageXmlElementsVisitor {
             if name.as_str() == "Value" {
                 let element = access.next_value::<MessageXmlValue>()?;
                 elements.push(MessageXmlElement::MessageXmlValue(element));
-            } else if let Text::Text(value) = access.next_value::<Text>()? {
-                let element = MessageXmlTagged { name, value };
-                elements.push(MessageXmlElement::MessageXmlTagged(element));
+            } else {
+                match access.next_value::<Text>()? {
+                    Text::Content(value) => {
+                        elements.push(MessageXmlElement::MessageXmlTagged(MessageXmlTagged {
+                            name,
+                            value,
+                        }));
+                    }
+                    Text::TypesNsDeclaration => {}
+                    Text::Attributed(attributes) => {
+                        elements.push(MessageXmlElement::MessageXmlAttributed(
+                            MessageXmlAttributed { name, attributes },
+                        ));
+                    }
+                }
             }
         }
 
