@@ -15,6 +15,9 @@ use super::{Folder, Folders, PathToElement};
 /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/updates-folder>
 #[derive(Debug, XmlSerialize)]
 #[xml_struct(variant_ns_prefix = "t")]
+// Only a handful of updates exist at any time, so boxing the large variant
+// would add indirection for no real saving.
+#[allow(clippy::large_enum_variant)]
 pub enum Updates {
     /// Not implemented in EWS (as per the documentation page for this element), but still an option
     /// See <https://learn.microsoft.com/en-us/exchange/client-developer/web-service-reference/appendtofolderfield>
@@ -98,6 +101,7 @@ mod tests {
                         },
                         folder: Folder::Folder {
                             display_name: Some("NewFolderName".to_string()),
+                            distinguished_folder_id: None,
                             folder_id: None,
                             parent_folder_id: None,
                             folder_class: None,
@@ -164,6 +168,7 @@ mod tests {
                             parent_folder_id: None,
                             folder_class: None,
                             display_name: None,
+                            distinguished_folder_id: None,
                             total_count: None,
                             child_folder_count: None,
                             extended_property: None,
